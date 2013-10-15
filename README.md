@@ -12,6 +12,21 @@ To build this package you can just use `gradlew` from the command line, or
 you can put the package inside a catkin workspace and built it with
 `catkin_make`.
 
+Requirements
+------------
+
+In order to use this code to drive a Create or a Kobuki base,
+an Android device with USB On The Go (OTG) is needed. A
+[usb-otg](http://www.ebay.com/bhp/micro-usb-otg-cable-nexus-7) cable
+is also needed.
+
+We tested this code in:
+
+* Nexus 7
+* Nexus 7 2013
+* Galaxy S4 Google Edition
+
+
 Usage
 -----
 
