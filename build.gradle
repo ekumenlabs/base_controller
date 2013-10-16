@@ -41,7 +41,7 @@ apply plugin: 'catkin'
 
 allprojects {
     /* A github url provides a good standard unique name for your project */
-    group 'com.github.rosjava.base_controller'
+    group 'com.github.creativa77.base_controller'
     version = project.catkin.pkg.version
 }
 
