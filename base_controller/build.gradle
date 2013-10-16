@@ -14,14 +14,8 @@
  * the License.
  */
 
-/*
- Examples of
-   1) dependencies from another project in this gradle stack.
-   2,3) dependency from a maven repository.
-*/
-
 dependencies {
-    compile 'ros.android_core:android_gingerbread_mr1:0.0.0-SNAPSHOT'
+    compile 'org.ros.android_core:android_gingerbread_mr1:0.1.1'
     compile fileTree(dir: 'libs', include: '*.jar')
 }
 
@@ -29,5 +23,5 @@ apply plugin: 'android-library'
 
 android {
     compileSdkVersion 17
-    buildToolsVersion androidBuildToolsVersion
 }
+ 
