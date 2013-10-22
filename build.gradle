@@ -15,7 +15,7 @@
  */
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '1.7'
+    gradleVersion = '1.8'
 }
 
 buildscript {
@@ -49,4 +49,10 @@ subprojects {
     /* See https://github.com/rosjava/rosjava_bootstrap (look for gradle_plugins)
        to see what is going on under the hood. */
     apply plugin: 'ros-android'
+
+    buildscript {
+        dependencies {
+            classpath 'com.android.tools.build:gradle:0.6.+'
+        }
+    }
 }
