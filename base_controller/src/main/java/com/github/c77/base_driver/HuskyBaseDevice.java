@@ -23,11 +23,13 @@ package com.github.c77.base_driver;
 import com.hoho.android.usbserial.driver.UsbSerialDriver;
 import com.hoho.android.usbserial.util.SerialInputOutputManager;
 
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.ros.exception.RosRuntimeException;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -94,14 +96,24 @@ public class HuskyBaseDevice implements BaseDevice {
                 }
 
                 @Override
-                public void onNewData(final byte[] data) {}
+                public void onNewData(final byte[] data) {
+                    HuskyBaseDevice.this.updateReceivedData(data);
+                }
             };
 
         serialInputOutputManager = new SerialInputOutputManager(serialDriver, listener);
         executorService.submit(serialInputOutputManager);
     }
 
-    public void initialize() {}
+    private void updateReceivedData(final byte[] bytes) {
+        int readBytes = bytes.length;
+        log.info("-- IN -->" + ByteBuffer.allocateDirect(readBytes).put(bytes, 0, readBytes));
+    }
+
+    public void initialize() {
+        log.info("Initializing");
+        write(buildPackage(new byte[]{ 0x03, 0x40 }));
+    }
 
     public void move(double linearVelX, double angVelZ) {
         BaseSpeedValues speeds = twistToBase(linearVelX, angVelZ);
@@ -136,14 +148,14 @@ public class HuskyBaseDevice implements BaseDevice {
         write(buildPackage(baseControlMsg));
     }
 
-    int checkSum(byte[] cmdPackage) {
+    char checkSum(byte[] cmdPackage) {
         // See Appendix A of "clearpath control protocol" doc,to understand how to implement it
         //Polynomial: x16+x12+x5+1 (0x1021)
         //Initial value: 0xFFFF
         //Check constant: 0x1D0F
 
         //CRC lookup table for polynomial 0x1021
-        int table[] = {0, 4129, 8258, 12387, 16516, 20645, 24774, 28903, 33032, 37161, 41290,
+        char table[] = {0, 4129, 8258, 12387, 16516, 20645, 24774, 28903, 33032, 37161, 41290,
                 45419, 49548, 53677, 57806, 61935, 4657, 528, 12915, 8786, 21173, 17044, 29431,
                 25302, 37689, 33560, 45947, 41818, 54205, 50076, 62463, 58334, 9314, 13379, 1056,
                 5121, 25830, 29895, 17572, 21637, 42346, 46411, 34088, 38153, 58862, 62927, 50604,
@@ -166,19 +178,18 @@ public class HuskyBaseDevice implements BaseDevice {
                 7392, 3265, 61215, 65342, 53085, 57212, 44955, 49082, 36825, 40952, 28183, 32310,
                 20053, 24180, 11923, 16050, 3793, 7920};
 
-        int initialValue = 0xFFFF;
         int size = cmdPackage.length - 2;
-        int checksum = initialValue;
+        char checksum = 0xFFFF;
         int counter = 0;
         while(counter < size) {
-            checksum = (checksum << 8) ^ table[((checksum >> 8)^cmdPackage[counter]) & 0xFFFF];
+            checksum = (char) ((char)(checksum << 8) ^ table[((checksum >> 8)^cmdPackage[counter]) & 0xFF]);
             counter++;
         }
         return checksum;
     }
 
     byte[] buildPackage(byte[] payload) {
-        int checksum = 0;
+        char checksum = 0;
         int payloadLength = payload.length;
         byte[] pkg = new byte[payloadLength + 10];
         long msgTime = System.currentTimeMillis();
@@ -211,10 +222,10 @@ public class HuskyBaseDevice implements BaseDevice {
 
     private void write(byte[] command) {
         try {
-            log.info("Writing a command to USB Device.");
+            log.info("Writing a command to USB Device: " + Hex.encodeHex(command));
             serialDriver.write(command, 1000);
-        } catch (IOException e) {
-            throw new RosRuntimeException(e);
+        } catch(Throwable t) {
+            log.error("Exception writing command: " + Hex.encodeHex(command), t);
         }
     }
 }
