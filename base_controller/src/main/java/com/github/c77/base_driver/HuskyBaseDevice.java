@@ -43,7 +43,9 @@ public class HuskyBaseDevice implements BaseDevice {
     private static UsbSerialDriver serialDriver = null;
 
     public BaseStatus getBaseStatus() {
-        return null;
+        BaseStatus baseStatus;
+        baseStatus = new BaseStatus();
+        return baseStatus;
     }
 
     // All BaseDevice classes have the same signature. Husky doesn't need velocity
@@ -117,8 +119,8 @@ public class HuskyBaseDevice implements BaseDevice {
     private void sendMovementPackage(BaseSpeedValues speeds) {
         int linearSpeed = speeds.getLinearSpeed();
         int angSpeed = speeds.getAngSpeed();
-        int linearAccel = 0x05;         // Fixed acceleration of 5[m/s²]
-        int MSGType = 0x0204;           // Set velocities using kinematic model
+        int linearAccel = 0x6800;         // Fixed acceleration of 5[m/s²]
+        int MSGType = 0x0204;             // Set velocities using kinematic model
 
         //Little-endian encoding
         byte[] baseControlMsg = new byte[]{
