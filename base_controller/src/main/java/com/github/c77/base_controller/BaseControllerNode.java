@@ -82,7 +82,7 @@ public class BaseControllerNode extends AbstractNodeMain implements MessageListe
             public void run() {
                 // thread to constantly send commands to the base
                 try {
-                    while(true){
+                    while(true) {
                         baseDevice.move(linearVelX, angVelZ);
                         Thread.sleep(250);
                     }
@@ -130,7 +130,7 @@ public class BaseControllerNode extends AbstractNodeMain implements MessageListe
     private synchronized void setTwistValues(double linearVelX, double angVelZ) {
         this.linearVelX = linearVelX;
         this.angVelZ = angVelZ;
-        log.info("synchronized setting: " + this.linearVelX);
+        log.info("synchronized setting: (" + this.linearVelX + "," + this.angVelZ + ")");
     }
 
     @Override
