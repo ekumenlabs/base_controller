@@ -23,10 +23,8 @@ package com.github.c77.base_driver;
 import com.hoho.android.usbserial.driver.UsbSerialDriver;
 import com.hoho.android.usbserial.util.SerialInputOutputManager;
 
-import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.ros.exception.RosRuntimeException;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -54,11 +52,14 @@ public class HuskyBaseDevice implements BaseDevice {
     //conversion since is able to receive direct linear and angular velocities.
     private class BaseSpeedValues {
         private final int linearSpeed;
-        private final int angularSpeed ;
+        private final int angularSpeed;
 
-        private BaseSpeedValues(int linearSpeed, int angularSpeed) {
-            this.linearSpeed = linearSpeed;
-            this.angularSpeed = angularSpeed;
+        private static final double LINEAR_SPEED_LIMIT = 100.0;
+        private static final double ANGULAR_SPEED_LIMIT = 100.0;
+
+        private BaseSpeedValues(double linearSpeed, double angularSpeed) {
+            this.linearSpeed = (int)Math.round(Math.max(Math.min(linearSpeed * 100.0, LINEAR_SPEED_LIMIT), -1.0*LINEAR_SPEED_LIMIT));
+            this.angularSpeed = (int)Math.round(Math.max(Math.min(angularSpeed * 100.0, ANGULAR_SPEED_LIMIT), -1.0*ANGULAR_SPEED_LIMIT));
         }
 
         public int getLinearSpeed() {
@@ -76,6 +77,7 @@ public class HuskyBaseDevice implements BaseDevice {
             serialDriver.open();
             serialDriver.setParameters(115200, UsbSerialDriver.DATABITS_8,
                     UsbSerialDriver.STOPBITS_1, UsbSerialDriver.PARITY_NONE);
+            log.info("Serial device opened correctly");
         } catch (IOException e) {
             log.info("Error setting up device: " + e.getMessage(), e);
             e.printStackTrace();
@@ -109,15 +111,16 @@ public class HuskyBaseDevice implements BaseDevice {
 
     private void updateReceivedData(final byte[] bytes) {
         int readBytes = bytes.length;
-        log.info("-- IN -->" + ByteBuffer.allocateDirect(readBytes).put(bytes, 0, readBytes));
+        //log.info("-- IN -->" + HuskyBaseUtils.byteArrayToString(bytes));
     }
 
     public void initialize() {
         log.info("Initializing");
-        write(buildPackage(new byte[]{ 0x03, 0x40 }));
+        // write(buildPackage(new byte[]{ 0x03, 0x40 }));
     }
 
     public void move(double linearVelX, double angVelZ) {
+        //log.info("trying to move (" + linearVelX + "," + angVelZ + ")");
         BaseSpeedValues speeds = twistToBase(linearVelX, angVelZ);
         sendMovementPackage(speeds);
     }
@@ -125,13 +128,13 @@ public class HuskyBaseDevice implements BaseDevice {
     // All BaseDevice classes have the same signature. Husky doesn't need velocity
     //conversion since is able to receive direct linear and angular velocities.
     private BaseSpeedValues twistToBase(double linearVelX, double angVelZ) {
-        return new BaseSpeedValues((int) linearVelX, (int) angVelZ);
+        return new BaseSpeedValues(linearVelX, angVelZ);
     }
 
     private void sendMovementPackage(BaseSpeedValues speeds) {
         int linearSpeed = speeds.getLinearSpeed();
         int angSpeed = speeds.getAngSpeed();
-        int linearAccel = 0x6800;         // Fixed acceleration of 5[m/s²]
+        int linearAccel = 0x00C8;         // Fixed acceleration of 5[m/s²]
         int MSGType = 0x0204;             // Set velocities using kinematic model
 
         //Little-endian encoding
@@ -144,59 +147,20 @@ public class HuskyBaseDevice implements BaseDevice {
             (byte) angSpeed,
             (byte) (angSpeed >> 8),
             (byte) linearAccel,
-            (byte) (linearAccel >> 8),
+            (byte) (linearAccel >> 8)
         };
 
         write(buildPackage(baseControlMsg));
     }
 
-    char checkSum(byte[] cmdPackage) {
-        // See Appendix A of "clearpath control protocol" doc,to understand how to implement it
-        //Polynomial: x16+x12+x5+1 (0x1021)
-        //Initial value: 0xFFFF
-        //Check constant: 0x1D0F
-
-        //CRC lookup table for polynomial 0x1021
-        char table[] = {0, 4129, 8258, 12387, 16516, 20645, 24774, 28903, 33032, 37161, 41290,
-                45419, 49548, 53677, 57806, 61935, 4657, 528, 12915, 8786, 21173, 17044, 29431,
-                25302, 37689, 33560, 45947, 41818, 54205, 50076, 62463, 58334, 9314, 13379, 1056,
-                5121, 25830, 29895, 17572, 21637, 42346, 46411, 34088, 38153, 58862, 62927, 50604,
-                54669, 13907, 9842, 5649, 1584, 30423, 26358, 22165, 18100, 46939, 42874, 38681,
-                34616, 63455, 59390, 55197, 51132, 18628, 22757, 26758, 30887, 2112, 6241, 10242,
-                14371, 51660, 55789, 59790, 63919, 35144, 39273, 43274, 47403, 23285, 19156, 31415,
-                27286, 6769, 2640, 14899, 10770, 56317, 52188, 64447, 60318, 39801, 35672, 47931,
-                43802, 27814, 31879, 19684, 23749, 11298, 15363, 3168, 7233, 60846, 64911, 52716,
-                56781, 44330, 48395, 36200, 40265, 32407, 28342, 24277, 20212, 15891, 11826, 7761,
-                3696, 65439, 61374, 57309, 53244, 48923, 44858, 40793, 36728, 37256, 33193, 45514,
-                41451, 53516, 49453, 61774, 57711,4224, 161, 12482, 8419, 20484, 16421, 28742,
-                24679, 33721, 37784, 41979, 46042, 49981, 54044, 58239, 62302, 689, 4752, 8947,
-                13010, 16949, 21012, 25207, 29270, 46570, 42443, 38312, 34185, 62830, 58703, 54572,
-                50445, 13538, 9411, 5280, 1153, 29798, 25671, 21540, 17413, 42971, 47098, 34713,
-                38840, 59231, 63358, 50973, 55100, 9939, 14066, 1681, 5808, 26199, 30326, 17941,
-                22068, 55628, 51565, 63758, 59695, 39368, 35305, 47498, 43435, 22596, 18533, 30726,
-                26663, 6336, 2273, 14466, 10403, 52093, 56156, 60223, 64286, 35833, 39896,
-                43963, 48026, 19061, 23124, 27191, 31254, 2801, 6864, 10931, 14994, 64814, 60687,
-                56684, 52557, 48554, 44427, 40424, 36297, 31782, 27655, 23652, 19525, 15522, 11395,
-                7392, 3265, 61215, 65342, 53085, 57212, 44955, 49082, 36825, 40952, 28183, 32310,
-                20053, 24180, 11923, 16050, 3793, 7920};
-
-        int size = cmdPackage.length - 2;
-        char checksum = 0xFFFF;
-        int counter = 0;
-        while(counter < size) {
-            checksum = (char) ((char)(checksum << 8) ^ table[((checksum >> 8)^cmdPackage[counter]) & 0xFF]);
-            counter++;
-        }
-        return checksum;
-    }
 
     byte[] buildPackage(byte[] payload) {
         char checksum = 0;
         int payloadLength = payload.length;
-        byte[] pkg = new byte[payloadLength + 10];
+        byte[] pkg = new byte[payloadLength + 11];
         long msgTime = System.currentTimeMillis();
 
-        byte Flags = (byte) 0x00;                        // ACK suppressed
+        byte Flags = (byte) 0x01;                        // ACK suppressed
         byte Length0 = (byte) (payloadLength + 8);
         byte Length1 = (byte) ~Length0;                  // It always is Length0's complement
         int TimeStamp = (int)msgTime - (int)initialTime; // Set TimeStamp in milliseconds using four bytes
@@ -215,7 +179,7 @@ public class HuskyBaseDevice implements BaseDevice {
             pkg[i] = payload[i - 9];
         }
 
-        checksum = checkSum(pkg);
+        checksum = HuskyBaseUtils.checkSum(pkg);
         pkg[pkg.length - 2] = (byte)checksum;
         pkg[pkg.length - 1] = (byte)(checksum >> 8);
 
@@ -224,10 +188,10 @@ public class HuskyBaseDevice implements BaseDevice {
 
     private void write(byte[] command) {
         try {
-            log.info("Writing a command to USB Device: " + Hex.encodeHex(command));
+            //log.info("Writing a command to USB Device: " + HuskyBaseUtils.byteArrayToString(command));
             serialDriver.write(command, 1000);
         } catch(Throwable t) {
-            log.error("Exception writing command: " + Hex.encodeHex(command), t);
+            log.error("Exception writing command: " + HuskyBaseUtils.byteArrayToString(command), t);
         }
     }
 }
