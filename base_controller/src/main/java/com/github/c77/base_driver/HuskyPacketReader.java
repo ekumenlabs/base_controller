@@ -5,6 +5,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 
 /**
@@ -55,6 +56,7 @@ public class HuskyPacketReader {
         }
 
         ByteBuffer bufferParse = ByteBuffer.wrap(stored);
+        bufferParse.order(ByteOrder.LITTLE_ENDIAN);
         curState = parserState.PARTIAL;
 main:   while(storedIndex < storedSize) {
             switch(storedIndex) {
@@ -142,6 +144,9 @@ main:   while(storedIndex < storedSize) {
     // --------------------
 
     public class HuskyPacket {
+        public static final char TYPE_ENCODER_DATA = (char)0x8800;
+        public static final char TYPE_ENCODER_DATA_RAW = (char)0x8801;
+
         byte soh;
         byte length;
         byte lengthComplement;
