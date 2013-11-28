@@ -10,7 +10,7 @@ public interface OdometryStatus {
 
     double getPoseTheta();
 
-    double getSpeedLinear();
+    double getSpeedLinearX();
 
-    double getSpeedAngular();
+    double getSpeedAngularZ();
 }

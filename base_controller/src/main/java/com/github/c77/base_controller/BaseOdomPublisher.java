@@ -1,11 +1,11 @@
 package com.github.c77.base_controller;
 
 import com.github.c77.base_driver.BaseDevice;
-import com.github.c77.base_driver.BaseStatus;
 import com.github.c77.base_driver.OdometryStatus;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.ros.message.Time;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
@@ -14,10 +14,10 @@ import org.ros.node.topic.Publisher;
 import java.util.concurrent.CountDownLatch;
 
 import geometry_msgs.Point;
-import geometry_msgs.PoseWithCovariance;
 import geometry_msgs.Quaternion;
 import geometry_msgs.Twist;
 import nav_msgs.Odometry;
+import std_msgs.Header;
 
 /**
  * @author jcerruti@willowgarage.com (Julian Cerruti)
@@ -68,20 +68,29 @@ public class BaseOdomPublisher extends AbstractNodeMain {
     private void publish(OdometryStatus odometryStatus) {
         // Create odomentry message
         Odometry odometryMessage = odometryPublisher.newMessage();
+
+        // Header
+        Header header = odometryMessage.getHeader();
+        header.setFrameId("odom");
+        header.setStamp(Time.fromMillis(System.currentTimeMillis()));
+
+        // Pointers to important data fields
         Point position = odometryMessage.getPose().getPose().getPosition();
         Quaternion orientation = odometryMessage.getPose().getPose().getOrientation();
         Twist twist = odometryMessage.getTwist().getTwist();
+
+        // Populate the fields. Synchronize to avoid having the data updated in between gets
         synchronized (odometryStatus) {
             position.setX(odometryStatus.getPoseX());
             position.setY(odometryStatus.getPoseY());
             orientation.setZ(Math.sin(odometryStatus.getPoseTheta()/2.0));
             orientation.setW(Math.cos(odometryStatus.getPoseTheta()/2.0));
-            // TODO: Rename to SpeedLinearX and SpeedAngularZ
-            twist.getLinear().setX(odometryStatus.getSpeedLinear());
-            twist.getAngular().setZ(odometryStatus.getSpeedAngular());
+            twist.getLinear().setX(odometryStatus.getSpeedLinearX());
+            twist.getAngular().setZ(odometryStatus.getSpeedAngularZ());
         }
 
-        // TODO: Finish populating message and publish it
+        // Publish!
+        odometryPublisher.publish(odometryMessage);
     }
 
     /**

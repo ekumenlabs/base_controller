@@ -10,8 +10,8 @@ public class HuskyOdometryStatus implements OdometryStatus {
     private int poseX;
     private int poseY;
     private double poseTheta;
-    private double speedLinear;
-    private double speedAngular;
+    private double speedLinearX;
+    private double speedAngularZ;
 
     private int lastLeftTravel;
     private int lastRightTravel;
@@ -59,8 +59,8 @@ public class HuskyOdometryStatus implements OdometryStatus {
 
         // Update data
         synchronized (this) {
-            speedLinear = (leftSpeed + rightSpeed) / 2.0;
-            speedAngular = (rightSpeed - leftSpeed) / WIDTH;
+            speedLinearX = (leftSpeed + rightSpeed) / 2.0;
+            speedAngularZ = (rightSpeed - leftSpeed) / WIDTH;
             poseX += dr * Math.cos(poseTheta);
             poseY += dr * Math.sin(poseTheta);
             poseTheta += da;
@@ -83,12 +83,12 @@ public class HuskyOdometryStatus implements OdometryStatus {
     }
 
     @Override
-    public double getSpeedLinear() {
-        return speedLinear;
+    public double getSpeedLinearX() {
+        return speedLinearX;
     }
 
     @Override
-    public double getSpeedAngular() {
-        return speedAngular;
+    public double getSpeedAngularZ() {
+        return speedAngularZ;
     }
 }
