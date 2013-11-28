@@ -35,6 +35,7 @@ public class HuskyBaseDevice implements BaseDevice {
     long initialTime = System.currentTimeMillis();
 
     HuskyPacketReader packetReader = new HuskyPacketReader();
+    HuskyOdometryStatus odometryStatus = new HuskyOdometryStatus();
 
     // Husky low level commands
     private final byte SOH = (byte) 0xAA;
@@ -48,6 +49,11 @@ public class HuskyBaseDevice implements BaseDevice {
         BaseStatus baseStatus;
         baseStatus = new BaseStatus();
         return baseStatus;
+    }
+
+    @Override
+    public OdometryStatus getOdometryStatus() {
+        return odometryStatus;
     }
 
     // All BaseDevice classes have the same signature. Husky doesn't need velocity
@@ -117,6 +123,7 @@ public class HuskyBaseDevice implements BaseDevice {
             log.info("-- IN -->" + packet);
             if(packet != null && packet.getMessageType() == HuskyPacketReader.HuskyPacket.TYPE_ENCODER_DATA) {
                 log.info("Got encoder data!");
+                odometryStatus.update(packet.getPayload());
             }
         } catch (HuskyPacketReader.Exception e) {
             log.error("Error parsing incoming packet", e);

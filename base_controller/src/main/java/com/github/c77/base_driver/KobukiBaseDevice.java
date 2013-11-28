@@ -108,6 +108,11 @@ public class KobukiBaseDevice implements BaseDevice {
         return baseStatus;
     }
 
+    @Override
+    public OdometryStatus getOdometryStatus() {
+        return null;
+    }
+
     private void updateReceivedData(final byte[] bytes) {
         int readBytes = bytes.length;
         packetReader.newPacket(ByteBuffer.allocateDirect(readBytes).put(bytes, 0, readBytes));
