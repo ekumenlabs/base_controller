@@ -34,6 +34,9 @@ import java.util.concurrent.Executors;
 public class HuskyBaseDevice implements BaseDevice {
     long initialTime = System.currentTimeMillis();
 
+    HuskyPacketReader packetReader = new HuskyPacketReader();
+    HuskyOdometryStatus odometryStatus = new HuskyOdometryStatus();
+
     // Husky low level commands
     private final byte SOH = (byte) 0xAA;
     private final byte ProtocolVersion = (byte) 0x1;
@@ -46,6 +49,11 @@ public class HuskyBaseDevice implements BaseDevice {
         BaseStatus baseStatus;
         baseStatus = new BaseStatus();
         return baseStatus;
+    }
+
+    @Override
+    public OdometryStatus getOdometryStatus() {
+        return odometryStatus;
     }
 
     // All BaseDevice classes have the same signature. Husky doesn't need velocity
@@ -110,13 +118,21 @@ public class HuskyBaseDevice implements BaseDevice {
     }
 
     private void updateReceivedData(final byte[] bytes) {
-        int readBytes = bytes.length;
-        //log.info("-- IN -->" + HuskyBaseUtils.byteArrayToString(bytes));
+        try {
+            HuskyPacketReader.HuskyPacket packet = packetReader.parse(ByteBuffer.wrap(bytes));
+            log.info("-- IN -->" + packet);
+            if(packet != null && packet.getMessageType() == HuskyPacketReader.HuskyPacket.TYPE_ENCODER_DATA) {
+                log.info("Got encoder data!");
+                odometryStatus.update(packet.getPayload());
+            }
+        } catch (HuskyPacketReader.Exception e) {
+            log.error("Error parsing incoming packet", e);
+        }
     }
 
     public void initialize() {
         log.info("Initializing");
-        // write(buildPackage(new byte[]{ 0x03, 0x40 }));
+        sendEncodersRequest();
     }
 
     public void move(double linearVelX, double angVelZ) {
@@ -129,6 +145,13 @@ public class HuskyBaseDevice implements BaseDevice {
     //conversion since is able to receive direct linear and angular velocities.
     private BaseSpeedValues twistToBase(double linearVelX, double angVelZ) {
         return new BaseSpeedValues(linearVelX, angVelZ);
+    }
+
+    private void sendEncodersRequest() {
+        byte [] encoderRequestMessage = new byte[] {
+            0x00, 0x48, 0x55, 0x0A, 0x00
+        };
+        write(buildPackage(encoderRequestMessage));
     }
 
     private void sendMovementPackage(BaseSpeedValues speeds) {

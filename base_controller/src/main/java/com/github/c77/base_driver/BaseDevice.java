@@ -40,4 +40,7 @@ public interface BaseDevice {
      * @return: The base status updated with the latest base information.
      */
     BaseStatus getBaseStatus();
+
+
+    OdometryStatus getOdometryStatus();
 }

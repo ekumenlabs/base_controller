@@ -139,4 +139,9 @@ public class CreateBaseDevice implements BaseDevice {
         return new BaseStatus();
     }
 
+    @Override
+    public OdometryStatus getOdometryStatus() {
+        return null;
+    }
+
 }
