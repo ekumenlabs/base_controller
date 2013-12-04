@@ -45,7 +45,7 @@ public class BaseOdomPublisher extends AbstractNodeMain {
 
     @Override
     public GraphName getDefaultNodeName() {
-        return GraphName.of("mobile_base/odom_publisher");
+        return GraphName.of("/odom");
     }
 
     @Override
