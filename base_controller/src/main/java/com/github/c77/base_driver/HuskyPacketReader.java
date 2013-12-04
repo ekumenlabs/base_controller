@@ -64,6 +64,10 @@ main:   while(storedIndex < storedSize) {
                     log.debug("Parsing SOH");
                     parsedPacket.soh = bufferParse.get(storedIndex);
                     if(parsedPacket.soh != (byte)0xAA) {
+                        // Reset state so that we can wait until the correct packet start.
+                        storedSize = 0;
+                        storedIndex = 0;
+                        curState = parserState.READY;
                         throw new Exception("SOH byte doesn't match: " + parsedPacket.soh);
                     }
                     storedIndex += 1;
