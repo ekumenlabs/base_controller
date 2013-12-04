@@ -7,8 +7,8 @@ import java.nio.ByteOrder;
  * @author jcerruti@creativa77.com (Julian Cerruti)
  */
 public class HuskyOdometryStatus implements OdometryStatus {
-    private int poseX;
-    private int poseY;
+    private double poseX;
+    private double poseY;
     private double poseTheta;
     private double speedLinearX;
     private double speedAngularZ;
@@ -39,9 +39,9 @@ public class HuskyOdometryStatus implements OdometryStatus {
         // Right encoder travel
         int rightTravel = buffer.getInt(5);
         // Left encoder speed
-        char leftSpeed = buffer.getChar(9);
+        short leftSpeed = buffer.getShort(9);
         // Right encoder speed
-        char rightSpeed = buffer.getChar(11);
+        short rightSpeed = buffer.getShort(11);
 
         // Special case: first time ever we can't calculate differences
         if(!haveLastTravel) {
@@ -52,15 +52,15 @@ public class HuskyOdometryStatus implements OdometryStatus {
         }
 
         // Calculate deltas
-        double dr = ((leftTravel - lastLeftTravel) + (rightTravel - lastRightTravel))/2.0;
-        double da = ((rightTravel - lastRightTravel) - (leftTravel - lastLeftTravel))/WIDTH;
+        double dr = ((leftTravel - lastLeftTravel) + (rightTravel - lastRightTravel))/2000.0;
+        double da = ((rightTravel - lastRightTravel) - (leftTravel - lastLeftTravel))/(1000.0*WIDTH);
         lastLeftTravel = leftTravel;
         lastRightTravel = rightTravel;
 
         // Update data
         synchronized (this) {
-            speedLinearX = (leftSpeed + rightSpeed) / 2.0;
-            speedAngularZ = (rightSpeed - leftSpeed) / WIDTH;
+            speedLinearX = (leftSpeed + rightSpeed) / 2000.0;
+            speedAngularZ = (rightSpeed - leftSpeed) / (1000.0*WIDTH);
             poseX += dr * Math.cos(poseTheta);
             poseY += dr * Math.sin(poseTheta);
             poseTheta += da;
@@ -68,14 +68,12 @@ public class HuskyOdometryStatus implements OdometryStatus {
     }
 
     @Override
-    public int getPoseX() {
+    public double getPoseX() {
         return poseX;
     }
 
     @Override
-    public int getPoseY() {
-        return poseY;
-    }
+    public double getPoseY() { return poseY; }
 
     @Override
     public double getPoseTheta() {

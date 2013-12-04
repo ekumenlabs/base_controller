@@ -46,7 +46,7 @@ public class BaseOdomPublisher extends AbstractNodeMain {
                     while(true){
                         odometryStatus = baseDevice.getOdometryStatus();
                         BaseOdomPublisher.this.publish(odometryStatus);
-                        Thread.sleep(10);
+                        Thread.sleep(100, 0);
                     }
                 } catch (Throwable t) {
                     log.error("Exception occurred during state publisher loop.", t);
@@ -73,6 +73,9 @@ public class BaseOdomPublisher extends AbstractNodeMain {
         Header header = odometryMessage.getHeader();
         header.setFrameId("odom");
         header.setStamp(Time.fromMillis(System.currentTimeMillis()));
+
+        // Child frame id
+        odometryMessage.setChildFrameId("base_link");
 
         // Pointers to important data fields
         Point position = odometryMessage.getPose().getPose().getPosition();
