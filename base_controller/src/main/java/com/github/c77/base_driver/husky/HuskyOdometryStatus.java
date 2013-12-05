@@ -1,4 +1,7 @@
-package com.github.c77.base_driver;
+package com.github.c77.base_driver.husky;
+
+import com.github.c77.base_driver.AbstractOdometryStatus;
+import com.github.c77.base_driver.OdometryStatus;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -6,12 +9,7 @@ import java.nio.ByteOrder;
 /**
  * @author jcerruti@creativa77.com (Julian Cerruti)
  */
-public class HuskyOdometryStatus implements OdometryStatus {
-    private double poseX;
-    private double poseY;
-    private double poseTheta;
-    private double speedLinearX;
-    private double speedAngularZ;
+public class HuskyOdometryStatus extends AbstractOdometryStatus {
 
     private int lastLeftTravel;
     private int lastRightTravel;
@@ -59,34 +57,11 @@ public class HuskyOdometryStatus implements OdometryStatus {
 
         // Update data
         synchronized (this) {
-            speedLinearX = (leftSpeed + rightSpeed) / 2000.0;
+            this.speedLinearX = (leftSpeed + rightSpeed) / 2000.0;
             speedAngularZ = (rightSpeed - leftSpeed) / (1000.0*WIDTH);
             poseX += dr * Math.cos(poseTheta);
             poseY += dr * Math.sin(poseTheta);
             poseTheta += da;
         }
-    }
-
-    @Override
-    public double getPoseX() {
-        return poseX;
-    }
-
-    @Override
-    public double getPoseY() { return poseY; }
-
-    @Override
-    public double getPoseTheta() {
-        return poseTheta;
-    }
-
-    @Override
-    public double getSpeedLinearX() {
-        return speedLinearX;
-    }
-
-    @Override
-    public double getSpeedAngularZ() {
-        return speedAngularZ;
     }
 }

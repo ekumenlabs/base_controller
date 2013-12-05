@@ -14,13 +14,17 @@
  * the License.
  */
 
-package com.github.c77.base_driver;
+package com.github.c77.base_driver.kobuki;
+
+import com.github.c77.base_driver.AbstractOdometryStatus;
+import com.github.c77.base_driver.BaseStatus;
+import com.github.c77.base_driver.InertialInformation;
 
 /**
  * Created by Lucas Chiesa on 10/10/13.
  */
 
-public class KobukiPacketParser {
+public class KobukiPacketParser extends AbstractOdometryStatus {
 
     private int TIMESTAMP = 0;
     private int BUMPER = 2;
