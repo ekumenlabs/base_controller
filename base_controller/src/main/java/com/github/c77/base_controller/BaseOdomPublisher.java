@@ -45,7 +45,7 @@ public class BaseOdomPublisher extends AbstractNodeMain {
 
     @Override
     public GraphName getDefaultNodeName() {
-        return GraphName.of("/odom");
+        return GraphName.of("mobile_base/odom_publisher");
     }
 
     @Override
@@ -72,7 +72,7 @@ public class BaseOdomPublisher extends AbstractNodeMain {
             log.info("Interrupted while waiting for ACM device");
         }
 
-        odometryPublisher = connectedNode.newPublisher("mobile_base/odom", "nav_msgs/Odometry");
+        odometryPublisher = connectedNode.newPublisher("/odom", "nav_msgs/Odometry");
         tfPublisher = connectedNode.newPublisher("/tf", TFMessage._TYPE);
         odomToBaseLink = mMessageFactory.newFromType(TransformStamped._TYPE);
         baseToLaser = mMessageFactory.newFromType(TransformStamped._TYPE);
