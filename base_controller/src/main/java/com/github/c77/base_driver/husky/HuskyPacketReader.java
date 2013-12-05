@@ -1,4 +1,4 @@
-package com.github.c77.base_driver;
+package com.github.c77.base_driver.husky;
 
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.logging.Log;
@@ -6,7 +6,6 @@ import org.apache.commons.logging.LogFactory;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Arrays;
 
 /**
  * @author jcerruti@creativa77.com (Julian Cerruti)

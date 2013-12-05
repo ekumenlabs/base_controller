@@ -14,12 +14,15 @@
  * the License.
  */
 
-package com.github.c77.base_driver;
+package com.github.c77.base_driver.create;
 
 /**
  * Created by Sebastian Garcia Marra on 22/07/13.
  */
 
+import com.github.c77.base_driver.BaseDevice;
+import com.github.c77.base_driver.BaseStatus;
+import com.github.c77.base_driver.OdometryStatus;
 import com.hoho.android.usbserial.driver.UsbSerialDriver;
 
 import org.apache.commons.logging.Log;

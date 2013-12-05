@@ -14,12 +14,15 @@
  * the License.
  */
 
-package com.github.c77.base_driver;
+package com.github.c77.base_driver.kobuki;
 
 /**
  * Created by Sebastian Garcia Marra on 05/08/13.
  */
 
+import com.github.c77.base_driver.BaseDevice;
+import com.github.c77.base_driver.BaseStatus;
+import com.github.c77.base_driver.OdometryStatus;
 import com.hoho.android.usbserial.driver.UsbSerialDriver;
 import com.hoho.android.usbserial.util.SerialInputOutputManager;
 
@@ -45,9 +48,11 @@ public class KobukiBaseDevice implements BaseDevice {
     private final KobukiPacketReader packetReader = new KobukiPacketReader();
     private final KobukiPacketParser packetParser = new KobukiPacketParser();
     private BaseStatus baseStatus = new BaseStatus();
+    private KobukiOdometryStatus odometryStatus = new KobukiOdometryStatus();
 
     private static final Log log = LogFactory.getLog(KobukiBaseDevice.class);
     private static UsbSerialDriver serialDriver = null;
+
 
     private class BaseSpeedValues {
         private final int linearSpeed;
@@ -110,13 +115,14 @@ public class KobukiBaseDevice implements BaseDevice {
 
     @Override
     public OdometryStatus getOdometryStatus() {
-        return null;
+        return odometryStatus;
     }
 
     private void updateReceivedData(final byte[] bytes) {
         int readBytes = bytes.length;
         packetReader.newPacket(ByteBuffer.allocateDirect(readBytes).put(bytes, 0, readBytes));
         baseStatus = packetParser.parseBaseStatus(packetReader.getSensorPacket());
+        odometryStatus.update(baseStatus);
     }
 
     public void initialize() {

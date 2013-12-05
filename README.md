@@ -47,7 +47,7 @@ Import the ROS nodes and the base drivers:
 ```java
 import com.github.c77.base_controller.BaseControllerNode;
 import com.github.c77.base_controller.BaseStatusPublisher;
-import com.github.c77.base_driver.KobukiBaseDevice;
+import com.github.c77.base_driver.kobuki.KobukiBaseDevice;
 ```
 
 You can instantiate the nodes when creating the Main ROS Activity:

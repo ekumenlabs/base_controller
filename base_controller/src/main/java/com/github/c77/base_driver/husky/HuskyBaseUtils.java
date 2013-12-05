@@ -1,4 +1,4 @@
-package com.github.c77.base_driver;
+package com.github.c77.base_driver.husky;
 
 import org.apache.commons.codec.binary.Hex;
 
