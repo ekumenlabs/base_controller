@@ -40,11 +40,6 @@ public class KobukiPacketParser extends AbstractOdometryStatus {
     private int LEFT_ENC = 5;
     private int RIGHT_ENC = 7;
 
-    private double leftDistanceTicks;
-    private double rightDistanceTicks;
-    private int lastValueL;
-    private int lastValueR;
-
     private void updateOdometry(byte[] sensorPacket, BaseStatus baseStatus) {
         short leftEncoder;
         short rightEncoder;
@@ -54,14 +49,10 @@ public class KobukiPacketParser extends AbstractOdometryStatus {
         leftEncoder = ((short) ((sensorPacket[LEFT_ENC+1] << 8) | (sensorPacket[LEFT_ENC] & 0xFF)));
         rightEncoder = ((short) ((sensorPacket[RIGHT_ENC+1] << 8) | (sensorPacket[RIGHT_ENC] & 0xFF)));
         thisValueL = (int) (leftEncoder & 0x0000ffffL);
-		thisValueR = (int) (rightEncoder & 0x0000ffffL);
-        leftDistanceTicks += thisValueL - lastValueL;
-		rightDistanceTicks += thisValueR - lastValueR;
+        thisValueR = (int) (rightEncoder & 0x0000ffffL);
 
-		lastValueL = thisValueL;
-		lastValueR = thisValueR;
-		baseStatus.setLeftDistance(leftDistanceTicks / 11.7); // convert to mm from ticks
-        baseStatus.setRightDistance(rightDistanceTicks / 11.7); // convert to mm from ticks
+        baseStatus.setLeftDistance(thisValueL);
+        baseStatus.setRightDistance(thisValueR);
     }
 
     public BaseStatus parseBaseStatus(byte[] sensorPacket) {
