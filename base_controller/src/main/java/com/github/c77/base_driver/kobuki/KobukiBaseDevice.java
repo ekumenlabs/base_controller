@@ -51,8 +51,8 @@ public class KobukiBaseDevice implements BaseDevice {
     private KobukiOdometryStatus odometryStatus = new KobukiOdometryStatus();
 
     private static final Log log = LogFactory.getLog(KobukiBaseDevice.class);
-    private static UsbSerialDriver serialDriver = null;
 
+    private final UsbSerialDriver serialDriver;
 
     private class BaseSpeedValues {
         private final int linearSpeed;
@@ -72,7 +72,10 @@ public class KobukiBaseDevice implements BaseDevice {
         }
     }
 
-    public KobukiBaseDevice(UsbSerialDriver driver) {
+    public KobukiBaseDevice(UsbSerialDriver driver) throws Exception {
+        if(driver == null) {
+            throw new Exception("null USB driver provided");
+        }
         serialDriver = driver;
         try {
             serialDriver.open();
@@ -80,13 +83,11 @@ public class KobukiBaseDevice implements BaseDevice {
                     UsbSerialDriver.STOPBITS_1, UsbSerialDriver.PARITY_NONE);
         } catch (IOException e) {
             log.info("Error setting up device: " + e.getMessage(), e);
-            e.printStackTrace();
             try {
                 serialDriver.close();
             } catch (IOException e1) {
                 e1.printStackTrace();
             }
-            serialDriver = null;
         }
 
         final ExecutorService executorService = Executors.newSingleThreadExecutor();
