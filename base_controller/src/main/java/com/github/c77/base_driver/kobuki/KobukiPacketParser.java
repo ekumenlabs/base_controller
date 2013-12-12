@@ -24,21 +24,23 @@ import com.github.c77.base_driver.InertialInformation;
  * Created by Lucas Chiesa on 10/10/13.
  */
 
-public class KobukiPacketParser extends AbstractOdometryStatus {
+public class KobukiPacketParser {
 
-    private int TIMESTAMP = 0;
-    private int BUMPER = 2;
-    private int WHEEL_DROP = 3;
-    private int CLIFF = 4;
-    private int BUTTON = 11;
-    private int CHARGER = 12;
-    private int BATTERY = 13;
+    private final int TIMESTAMP = 0;
+    private final int BUMPER = 2;
+    private final int WHEEL_DROP = 3;
+    private final int CLIFF = 4;
+    private final int BUTTON = 11;
+    private final int CHARGER = 12;
+    private final int BATTERY = 13;
 
-    private int ANGLE = 0;
-    private int ANGLE_RATE = 2;
+    private final int ANGLE = 0;
+    private final int ANGLE_RATE = 2;
 
-    private int LEFT_ENC = 5;
-    private int RIGHT_ENC = 7;
+    private final int LEFT_ENC = 5;
+    private final int RIGHT_ENC = 7;
+
+    private final double TICKS_TO_MM = 11.7;
 
     private void updateOdometry(byte[] sensorPacket, BaseStatus baseStatus) {
         short leftEncoder;
@@ -51,8 +53,10 @@ public class KobukiPacketParser extends AbstractOdometryStatus {
         thisValueL = (int) (leftEncoder & 0x0000ffffL);
         thisValueR = (int) (rightEncoder & 0x0000ffffL);
 
-        baseStatus.setLeftDistance(thisValueL);
-        baseStatus.setRightDistance(thisValueR);
+        // TODO: Deal with wrapping or "circulation"
+        // according to spec: this goes from 0 to 65535 and circles
+        baseStatus.setLeftDistance((int)Math.round(thisValueL / TICKS_TO_MM));
+        baseStatus.setRightDistance((int)Math.round(thisValueR / TICKS_TO_MM));
     }
 
     public BaseStatus parseBaseStatus(byte[] sensorPacket) {

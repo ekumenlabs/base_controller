@@ -1,7 +1,6 @@
 package com.github.c77.base_driver.husky;
 
 import com.github.c77.base_driver.AbstractOdometryStatus;
-import com.github.c77.base_driver.OdometryStatus;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -11,12 +10,13 @@ import java.nio.ByteOrder;
  */
 public class HuskyOdometryStatus extends AbstractOdometryStatus {
 
-    private int lastLeftTravel;
-    private int lastRightTravel;
-    private boolean haveLastTravel = false;
 
     // TODO: Allow setting (and load from ROS param in node)
     private static final double WIDTH = 0.55;
+
+    public HuskyOdometryStatus() {
+        super(WIDTH);
+    }
 
     public void update(byte[] encoderData) {
         if(encoderData.length != 13) {
@@ -41,27 +41,7 @@ public class HuskyOdometryStatus extends AbstractOdometryStatus {
         // Right encoder speed
         short rightSpeed = buffer.getShort(11);
 
-        // Special case: first time ever we can't calculate differences
-        if(!haveLastTravel) {
-            lastLeftTravel = leftTravel;
-            lastRightTravel = rightTravel;
-            haveLastTravel = true;
-            return;
-        }
-
-        // Calculate deltas
-        double dr = ((leftTravel - lastLeftTravel) + (rightTravel - lastRightTravel))/2000.0;
-        double da = ((rightTravel - lastRightTravel) - (leftTravel - lastLeftTravel))/(1000.0*WIDTH);
-        lastLeftTravel = leftTravel;
-        lastRightTravel = rightTravel;
-
-        // Update data
-        synchronized (this) {
-            this.speedLinearX = (leftSpeed + rightSpeed) / 2000.0;
-            speedAngularZ = (rightSpeed - leftSpeed) / (1000.0*WIDTH);
-            poseX += dr * Math.cos(poseTheta);
-            poseY += dr * Math.sin(poseTheta);
-            poseTheta += da;
-        }
+        // TODO: Put a comment here
+        calculateAndUpdate(leftTravel, rightTravel, rightSpeed, leftSpeed);
     }
 }
