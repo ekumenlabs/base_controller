@@ -16,6 +16,8 @@
 
 package com.github.c77.base_driver.kobuki;
 
+import android.util.Log;
+
 import com.github.c77.base_driver.AbstractOdometryStatus;
 import com.github.c77.base_driver.BaseStatus;
 import com.github.c77.base_driver.InertialInformation;
@@ -42,21 +44,52 @@ public class KobukiPacketParser {
 
     private final double TICKS_TO_MM = 11.7;
 
+    private int prevLeftEncoder;
+    private int prevRightEncoder;
+    private short leftLoops = 0;
+    private short rightLoops = 0;
+
+
     private void updateOdometry(byte[] sensorPacket, BaseStatus baseStatus) {
+        final short MAX_ODOM = (short) 65535;
+        final short lowMark = MAX_ODOM / 4;
+        final short highMark = MAX_ODOM - lowMark;
         short leftEncoder;
         short rightEncoder;
-        int thisValueL;
-        int thisValueR;
+        int currLeftEncoder;
+        int currRightEncoder;
+        int acumLeftEncoder;
+        int acumRightEncoder;
 
         leftEncoder = ((short) ((sensorPacket[LEFT_ENC+1] << 8) | (sensorPacket[LEFT_ENC] & 0xFF)));
         rightEncoder = ((short) ((sensorPacket[RIGHT_ENC+1] << 8) | (sensorPacket[RIGHT_ENC] & 0xFF)));
-        thisValueL = (int) (leftEncoder & 0x0000ffffL);
-        thisValueR = (int) (rightEncoder & 0x0000ffffL);
+        currLeftEncoder = (int) (leftEncoder & 0x0000ffffL);
+        currRightEncoder = (int) (rightEncoder & 0x0000ffffL);
 
+        if (prevLeftEncoder > highMark && currLeftEncoder < lowMark) {
+            Log.e("PARSER", "OVER. Left loops: " + Integer.toString(leftLoops));
+            leftLoops++;
+        }
+        if (prevLeftEncoder < lowMark && currLeftEncoder > highMark) {
+            Log.e("PARSER", "UNDER Left loops: " + Integer.toString(leftLoops));
+            leftLoops--;
+        }
+
+        if (prevRightEncoder > highMark && currRightEncoder < lowMark) {
+            Log.e("PARSER", "OVER. Right loops: " + Integer.toString(rightLoops));
+            rightLoops++;
+        }
+        if (prevRightEncoder < lowMark && currRightEncoder > highMark) {
+            Log.e("PARSER", "UNDER. Right loops: " + Integer.toString(rightLoops));
+            rightLoops--;
+        }
+
+        acumLeftEncoder = (MAX_ODOM * leftLoops) + currLeftEncoder;
+        acumRightEncoder = (MAX_ODOM * rightEncoder) + currLeftEncoder;
         // TODO: Deal with wrapping or "circulation"
         // according to spec: this goes from 0 to 65535 and circles
-        baseStatus.setLeftDistance((int)Math.round(thisValueL / TICKS_TO_MM));
-        baseStatus.setRightDistance((int)Math.round(thisValueR / TICKS_TO_MM));
+        baseStatus.setLeftDistance((int)Math.round(acumLeftEncoder / TICKS_TO_MM));
+        baseStatus.setRightDistance((int)Math.round(acumRightEncoder / TICKS_TO_MM));
     }
 
     public BaseStatus parseBaseStatus(byte[] sensorPacket) {

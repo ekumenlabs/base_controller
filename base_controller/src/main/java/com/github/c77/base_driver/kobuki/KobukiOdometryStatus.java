@@ -20,8 +20,8 @@ public class KobukiOdometryStatus extends AbstractOdometryStatus {
     }
 
     void update(BaseStatus baseStatus) {
-        log.info("Updating odometry. Left Ticks = " + baseStatus.getLeftDistance() +
-                ", Right Ticks = " + baseStatus.getRightDistance());
+        //log.info("Updating odometry. Left Ticks = " + baseStatus.getLeftDistance() +
+        //        ", Right Ticks = " + baseStatus.getRightDistance());
 
         if (baseStatus.getTimestamp() == lastTimestamp) {
             return;
