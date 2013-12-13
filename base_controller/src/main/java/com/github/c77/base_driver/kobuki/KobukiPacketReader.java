@@ -5,10 +5,16 @@
 */
 
 package com.github.c77.base_driver.kobuki;
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public class KobukiPacketReader {
+
+    Log log = LogFactory.getLog(KobukiPacketReader.class);
 
     //kobuki sensors read from here to update. Accessible fields
 	private byte[] sensorPacket = new byte[15];

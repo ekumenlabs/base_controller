@@ -32,10 +32,10 @@ public class BaseStatus {
 	private byte battery = 0;
 	private short angle = 0;
 	private short angleRate = 0;
-	private double leftDistance = 0;
-	private double rightDistance = 0;
+	private int leftDistance = 0;
+	private int rightDistance = 0;
 
-    public short getTimeStamp() {
+    public short getTimestamp() {
         return timeStamp;
     }
 
@@ -99,19 +99,19 @@ public class BaseStatus {
         this.angleRate = angleRate;
     }
 
-    public double getLeftDistance() {
+    public int getLeftDistance() {
         return leftDistance;
     }
 
-    public void setLeftDistance(double leftDistance) {
+    public void setLeftDistance(int leftDistance) {
         this.leftDistance = leftDistance;
     }
 
-    public double getRightDistance() {
+    public int getRightDistance() {
         return rightDistance;
     }
 
-    public void setRightDistance(double rightDistance) {
+    public void setRightDistance(int rightDistance) {
         this.rightDistance = rightDistance;
     }
 
