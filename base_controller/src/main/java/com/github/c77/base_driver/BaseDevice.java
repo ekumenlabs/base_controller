@@ -23,7 +23,7 @@ package com.github.c77.base_driver;
 public interface BaseDevice {
 
     /**
-     * initialize the base. This method should be called
+     * initialize the base. This method should is called by the node
      * before sending movement commands.
      */
     void initialize();

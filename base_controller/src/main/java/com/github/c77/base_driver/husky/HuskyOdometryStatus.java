@@ -10,7 +10,6 @@ import java.nio.ByteOrder;
  */
 public class HuskyOdometryStatus extends AbstractOdometryStatus {
 
-
     // TODO: Allow setting (and load from ROS param in node)
     private static final double WIDTH = 0.55;
 
@@ -24,13 +23,13 @@ public class HuskyOdometryStatus extends AbstractOdometryStatus {
         }
 
         // --------------------------------
-        // Parse buffer
+        // Parse buffer into encoder travels and speeds
         // --------------------------------
         ByteBuffer buffer = ByteBuffer.wrap(encoderData);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
 
         // Number of encoders
-        // TODO: Verify it's two
+        // TODO: Verify it's two encoders
         byte nEncoders = buffer.get();
         // Left encoder travel
         int leftTravel = buffer.getInt(1);
@@ -41,7 +40,7 @@ public class HuskyOdometryStatus extends AbstractOdometryStatus {
         // Right encoder speed
         short rightSpeed = buffer.getShort(11);
 
-        // TODO: Put a comment here
+        // Update the current estimated pose
         calculateAndUpdate(leftTravel, rightTravel, rightSpeed, leftSpeed);
     }
 }

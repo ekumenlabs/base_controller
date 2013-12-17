@@ -45,6 +45,9 @@ public class AbstractOdometryStatus implements OdometryStatus {
         return speedAngularZ;
     }
 
+    /**
+     * Updates the currently estimated pose based on the travel and speed of the encoders
+     */
     protected void calculateAndUpdate(int leftTravel, int rightTravel, double leftSpeed,
                                       double rightSpeed) {
 
