@@ -14,7 +14,6 @@ import org.ros.node.NodeConfiguration;
 import org.ros.node.topic.Publisher;
 
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 
 import geometry_msgs.Point;
 import geometry_msgs.Quaternion;
@@ -30,10 +29,8 @@ import tf2_msgs.TFMessage;
  * @author jcerruti@willowgarage.com (Julian Cerruti)
  */
 public class BaseOdomPublisher extends AbstractNodeMain {
-
-    private CountDownLatch nodeStartLatch = new CountDownLatch(1);
     Thread basePublisherThread;
-    BaseDevice baseDevice;
+    private final BaseDevice baseDevice;
     NodeConfiguration mNodeConfiguration = NodeConfiguration.newPrivate();
     MessageFactory mMessageFactory = mNodeConfiguration.getTopicMessageFactory();
     private Publisher<Odometry> odometryPublisher;
@@ -42,6 +39,10 @@ public class BaseOdomPublisher extends AbstractNodeMain {
     private TransformStamped baseToLaser;
 
     private static final Log log = LogFactory.getLog(BaseOdomPublisher.class);
+
+    public BaseOdomPublisher(BaseDevice baseDevice) {
+        this.baseDevice = baseDevice;
+    }
 
     @Override
     public GraphName getDefaultNodeName() {
@@ -65,12 +66,6 @@ public class BaseOdomPublisher extends AbstractNodeMain {
                 }
             }
         };
-
-        try {
-            nodeStartLatch.await();
-        } catch (InterruptedException e) {
-            log.info("Interrupted while waiting for ACM device");
-        }
 
         odometryPublisher = connectedNode.newPublisher("/odom", "nav_msgs/Odometry");
         tfPublisher = connectedNode.newPublisher("/tf", TFMessage._TYPE);
@@ -146,16 +141,5 @@ public class BaseOdomPublisher extends AbstractNodeMain {
         tfl.add(odomToBaseLink);
         tfl.add(baseToLaser);
         tfPublisher.publish(tfm);
-    }
-
-    /**
-     * Should be called to finish the node initialization. The base driver, already initialize, should
-     * be provided to this method. This allows to defer the device creation to the moment Android gives
-     * the application the required USB permissions.
-     * @param selectedBaseDevice: the base device that wants to be used (Kobuki or create for now)
-     */
-    public void setBaseDevice(BaseDevice selectedBaseDevice) {
-        baseDevice = selectedBaseDevice;
-        nodeStartLatch.countDown();
     }
 }
