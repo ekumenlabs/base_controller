@@ -36,8 +36,9 @@ import std_msgs.Byte;
  */
 public class BaseStatusPublisher extends AbstractNodeMain {
 
-    private CountDownLatch nodeStartLatch = new CountDownLatch(1);
     private Thread basePublisherThread;
+
+    private final BaseDevice baseDevice;
 
     private Publisher<std_msgs.Byte> bumperPublisher;
     private Publisher<std_msgs.Byte> wheelDropPublisher;
@@ -45,8 +46,11 @@ public class BaseStatusPublisher extends AbstractNodeMain {
     private Publisher<std_msgs.Byte> chargerPublisher;
     private Publisher<std_msgs.Byte> batteryPublisher;
 
-    private BaseDevice baseDevice;
     private static final Log log = LogFactory.getLog(BaseStatusPublisher.class);
+
+    public BaseStatusPublisher(BaseDevice baseDevice) {
+        this.baseDevice = baseDevice;
+    }
 
     @Override
     public GraphName getDefaultNodeName() {
@@ -70,12 +74,6 @@ public class BaseStatusPublisher extends AbstractNodeMain {
                 }
             }
         };
-
-        try {
-            nodeStartLatch.await();
-        } catch (InterruptedException e) {
-            log.info("Interrupted while waiting for ACM device");
-        }
 
         bumperPublisher = connectedNode.newPublisher("mobile_base/bumper", "std_msgs/Byte");
         wheelDropPublisher = connectedNode.newPublisher("mobile_base/wheel_drop",  "std_msgs/Byte");
@@ -106,17 +104,6 @@ public class BaseStatusPublisher extends AbstractNodeMain {
         Byte battery = batteryPublisher.newMessage();
         battery.setData(baseStatus.getBattery());
         batteryPublisher.publish(battery);
-    }
-
-    /**
-     * Should be called to finish the node initialization. The base driver, already initialize, should
-     * be provided to this method. This allows to defer the device creation to the moment Android gives
-     * the application the required USB permissions.
-     * @param selectedBaseDevice: the base device that wants to be used (Kobuki or create for now)
-     */
-    public void setBaseDevice(BaseDevice selectedBaseDevice) {
-        baseDevice = selectedBaseDevice;
-        nodeStartLatch.countDown();
     }
 
     @Override

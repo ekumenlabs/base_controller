@@ -35,18 +35,24 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class HuskyBaseDevice implements BaseDevice {
-    long initialTime = System.currentTimeMillis();
+    private final long initialTime;
 
     HuskyPacketReader packetReader = new HuskyPacketReader();
     HuskyOdometryStatus odometryStatus = new HuskyOdometryStatus();
 
     // Husky low level commands
-    private final byte SOH = (byte) 0xAA;
-    private final byte ProtocolVersion = (byte) 0x1;
-    private final byte STX = (byte) 0x55;
+    private static final byte SOH = (byte) 0xAA;
+    private static final byte PROTOCOL_VERSION = (byte) 0x1;
+    private static final byte STX = (byte) 0x55;
+
+    // Hardcoded speed (linear and angular) scale and limits
+    private static final double SPEED_LIMIT = 100.0;
+    private static final double SPEED_SCALE = 100.0;
 
     private static final Log log = LogFactory.getLog(HuskyBaseDevice.class);
-    private static UsbSerialDriver serialDriver = null;
+
+    // Underlying USB-serial driver
+    private final UsbSerialDriver serialDriver;
 
     public BaseStatus getBaseStatus() {
         BaseStatus baseStatus;
@@ -59,30 +65,12 @@ public class HuskyBaseDevice implements BaseDevice {
         return odometryStatus;
     }
 
-    // All BaseDevice classes have the same signature. Husky doesn't need velocity
-    //conversion since is able to receive direct linear and angular velocities.
-    private class BaseSpeedValues {
-        private final int linearSpeed;
-        private final int angularSpeed;
-
-        private static final double LINEAR_SPEED_LIMIT = 100.0;
-        private static final double ANGULAR_SPEED_LIMIT = 100.0;
-
-        private BaseSpeedValues(double linearSpeed, double angularSpeed) {
-            this.linearSpeed = (int)Math.round(Math.max(Math.min(linearSpeed * 100.0, LINEAR_SPEED_LIMIT), -1.0*LINEAR_SPEED_LIMIT));
-            this.angularSpeed = (int)Math.round(Math.max(Math.min(angularSpeed * 100.0, ANGULAR_SPEED_LIMIT), -1.0*ANGULAR_SPEED_LIMIT));
-        }
-
-        public int getLinearSpeed() {
-            return linearSpeed;
-        }
-
-        public int getAngSpeed() {
-            return angularSpeed;
-        }
-    }
 
     public HuskyBaseDevice(UsbSerialDriver driver) {
+        // Initialize timestamp for messages to be written to the Husky base
+        initialTime = System.currentTimeMillis();
+
+        // Open and initialize the underlying USB-serial driver
         serialDriver = driver;
         try {
             serialDriver.open();
@@ -90,20 +78,18 @@ public class HuskyBaseDevice implements BaseDevice {
                     UsbSerialDriver.STOPBITS_1, UsbSerialDriver.PARITY_NONE);
             log.info("Serial device opened correctly");
         } catch (IOException e) {
-            log.info("Error setting up device: " + e.getMessage(), e);
-            e.printStackTrace();
+            log.error("Error setting up device: " + e.getMessage(), e);
             try {
                 serialDriver.close();
-            } catch (IOException e1) {
-                e1.printStackTrace();
+            } catch (Throwable t) {
             }
-            serialDriver = null;
+            throw new RuntimeException("Couldn't open USB device driver", e);
         }
 
+        // Listen for USB-serial input events and call updateReceivedData whenever new data
+        // is received
         final ExecutorService executorService = Executors.newSingleThreadExecutor();
-
         SerialInputOutputManager serialInputOutputManager;
-
         final SerialInputOutputManager.Listener listener =
             new SerialInputOutputManager.Listener() {
                 @Override
@@ -115,41 +101,70 @@ public class HuskyBaseDevice implements BaseDevice {
                     HuskyBaseDevice.this.updateReceivedData(data);
                 }
             };
-
         serialInputOutputManager = new SerialInputOutputManager(serialDriver, listener);
         executorService.submit(serialInputOutputManager);
     }
 
+    /**
+     * Called every time there is new data received through the USB-serial interface
+     */
     private void updateReceivedData(final byte[] bytes) {
+        HuskyPacket packet = null;
         try {
-            HuskyPacketReader.HuskyPacket packet = packetReader.parse(ByteBuffer.wrap(bytes));
-            log.info("-- IN -->" + packet);
-            if(packet != null && packet.getMessageType() == HuskyPacketReader.HuskyPacket.TYPE_ENCODER_DATA) {
-                log.info("Got encoder data!");
-                odometryStatus.update(packet.getPayload());
-            }
-        } catch (HuskyPacketReader.Exception e) {
+            // Parse the packet
+            packet = packetReader.parse(ByteBuffer.wrap(bytes));
+
+        } catch (HuskyParserException e) {
             log.error("Error parsing incoming packet", e);
+        }
+
+        // If we did get a new packet
+        if(packet != null) {
+            switch(packet.getMessageType()) {
+
+                // It's encoder data: update odometry
+                case HuskyPacket.TYPE_ENCODER_DATA:
+                    odometryStatus.update(packet.getPayload());
+                    break;
+
+                // Ignore the rest of the packets
+                default:
+                    break;
+            }
         }
     }
 
+    /**
+     * Initializes the Husky base device
+     */
+    @Override
     public void initialize() {
         log.info("Initializing");
+        // Request the base to publish the encoders value
         sendEncodersRequest();
     }
 
+    /**
+     * Move the Husky base device with the given speeds
+     * @param linearVelX: linear speed
+     * @param angVelZ: rotational speed
+     */
+    @Override
     public void move(double linearVelX, double angVelZ) {
-        //log.info("trying to move (" + linearVelX + "," + angVelZ + ")");
-        BaseSpeedValues speeds = twistToBase(linearVelX, angVelZ);
-        sendMovementPackage(speeds);
+        // The Husky base takes linear and angular velocities.
+        // All we need to do is to scale and limit each value and fit it in the right format
+        sendMovementPackage(
+                scaleAndLimitSpeed(linearVelX),
+                scaleAndLimitSpeed(angVelZ));
     }
 
-    // All BaseDevice classes have the same signature. Husky doesn't need velocity
-    //conversion since is able to receive direct linear and angular velocities.
-    private BaseSpeedValues twistToBase(double linearVelX, double angVelZ) {
-        return new BaseSpeedValues(linearVelX, angVelZ);
+    private static int scaleAndLimitSpeed(double speed) {
+        return (int)Math.round(Math.max(Math.min(speed * SPEED_SCALE, SPEED_LIMIT), -1.0*SPEED_LIMIT));
     }
 
+    /**
+     * Request publishing of encoder information from the Husky base
+     */
     private void sendEncodersRequest() {
         byte [] encoderRequestMessage = new byte[] {
             0x00, 0x48, 0x55, 0x0A, 0x00
@@ -157,9 +172,11 @@ public class HuskyBaseDevice implements BaseDevice {
         write(buildPackage(encoderRequestMessage));
     }
 
-    private void sendMovementPackage(BaseSpeedValues speeds) {
-        int linearSpeed = speeds.getLinearSpeed();
-        int angSpeed = speeds.getAngSpeed();
+    /**
+     * Sends a movement command to the Husky base
+     *
+     */
+    private void sendMovementPackage(int linearSpeed, int angSpeed) {
         int linearAccel = 0x00C8;         // Fixed acceleration of 5[m/s²]
         int MSGType = 0x0204;             // Set velocities using kinematic model
 
@@ -180,6 +197,9 @@ public class HuskyBaseDevice implements BaseDevice {
     }
 
 
+    /**
+     * Builds a correctly-formatted Husky package
+     */
     byte[] buildPackage(byte[] payload) {
         char checksum = 0;
         int payloadLength = payload.length;
@@ -194,7 +214,7 @@ public class HuskyBaseDevice implements BaseDevice {
         pkg[0] = SOH;
         pkg[1] = Length0;
         pkg[2] = Length1;
-        pkg[3] = ProtocolVersion;
+        pkg[3] = PROTOCOL_VERSION;
         pkg[4] = (byte) TimeStamp;
         pkg[5] = (byte) (TimeStamp >> 8);
         pkg[6] = (byte) (TimeStamp >> 16);
@@ -212,9 +232,12 @@ public class HuskyBaseDevice implements BaseDevice {
         return pkg;
     }
 
+    /**
+     * Writes bytes to the underlying device
+     * @param command  Byte buffer
+     */
     private void write(byte[] command) {
         try {
-            //log.info("Writing a command to USB Device: " + HuskyBaseUtils.byteArrayToString(command));
             serialDriver.write(command, 1000);
         } catch(Throwable t) {
             log.error("Exception writing command: " + HuskyBaseUtils.byteArrayToString(command), t);

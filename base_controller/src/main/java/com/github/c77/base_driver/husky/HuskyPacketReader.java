@@ -35,7 +35,7 @@ public class HuskyPacketReader {
      * Parses incoming bytes into HuskyPacket objects
      * @return <code>null</code> if the packet is incomplete
      */
-    public HuskyPacket parse(ByteBuffer buffer) throws Exception {
+    public HuskyPacket parse(ByteBuffer buffer) throws HuskyParserException {
         // Samples:
         //  aa0df2000c030000000402550800de8f  (echo:out of range)
         //  aa0df20008040000000402550100d829
@@ -67,7 +67,7 @@ main:   while(storedIndex < storedSize) {
                         storedSize = 0;
                         storedIndex = 0;
                         curState = parserState.READY;
-                        throw new Exception("SOH byte doesn't match: " + parsedPacket.soh);
+                        throw new HuskyParserException("SOH byte doesn't match: " + parsedPacket.soh);
                     }
                     storedIndex += 1;
                     break;
@@ -114,7 +114,7 @@ main:   while(storedIndex < storedSize) {
                     log.debug("Parsing STX");
                     parsedPacket.stx = bufferParse.get(storedIndex);
                     if(parsedPacket.stx != (byte)0x55) {
-                        throw new Exception("STX byte doesn't match: " + parsedPacket.stx);
+                        throw new HuskyParserException("STX byte doesn't match: " + parsedPacket.stx);
                     }
                     storedIndex += 1;
                     break;
@@ -141,66 +141,9 @@ main:   while(storedIndex < storedSize) {
         }
     }
 
-    // --------------------
-    // Helper inner classes
-    // TODO: consider generalizing and also move outside of class
-    // --------------------
-
-    public class HuskyPacket {
-        public static final char TYPE_ENCODER_DATA = (char)0x8800;
-        public static final char TYPE_ENCODER_DATA_RAW = (char)0x8801;
-
-        byte soh;
-        byte length;
-        byte lengthComplement;
-        byte version;
-        int timestamp;
-        byte flags;
-        char messageType;
-        byte stx;
-        byte[] payload;
-        char checksum;
-
-        public byte getLength() {
-            return length;
-        }
-
-        public int getTimestamp() {
-            return timestamp;
-        }
-
-        public byte getFlags() {
-            return flags;
-        }
-
-        public byte[] getPayload() {
-            return payload;
-        }
-
-        public char getMessageType() {
-            return messageType;
-        }
-
-        public byte getVersion() {
-            return version;
-        }
-
-        @Override
-        public String toString() {
-            return "HuskyPacket{" +
-                Integer.toHexString(messageType) + ":" +
-                new String(Hex.encodeHex(payload)) +
-                    '}';
-        }
-    };
-
-    public class Exception extends java.lang.Exception {
-        private final static String BASE_MESSAGE = "Exception parsing packet";
-        public Exception(String reason) {
-            super(BASE_MESSAGE + ": " + reason);
-        }
-    }
-
+    /**
+     * Very simple command-line testing for parsing known packet values
+     */
     public static void main(String args[]) throws java.lang.Exception {
         HuskyPacketReader reader = new HuskyPacketReader();
 
@@ -212,7 +155,6 @@ main:   while(storedIndex < storedSize) {
         System.out.println("Packet 1/2 = " + tryParse(reader, "aa0df200f7"));
         System.out.println("Packet 1/2 = " + tryParse(reader, "030000000402550800ef4f"));
     }
-
     private static HuskyPacket tryParse(HuskyPacketReader reader, String hexArrayString) throws java.lang.Exception {
         return reader.parse(ByteBuffer.wrap(Hex.decodeHex(hexArrayString.toCharArray())));
     }

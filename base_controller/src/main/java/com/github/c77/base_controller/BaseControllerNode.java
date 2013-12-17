@@ -27,8 +27,6 @@ import org.ros.node.ConnectedNode;
 import org.ros.node.Node;
 import org.ros.node.topic.Subscriber;
 
-import java.util.concurrent.CountDownLatch;
-
 import geometry_msgs.Twist;
 
 /**
@@ -36,17 +34,13 @@ import geometry_msgs.Twist;
  */
 
 public class BaseControllerNode extends AbstractNodeMain implements MessageListener<Twist> {
-    //  Latch used to synchronize start node start with
-    //  base driver reference being provided
-    private CountDownLatch nodeStartLatch = new CountDownLatch(1);
-
-    private BaseDevice baseDevice;
+    private final BaseDevice baseDevice;
     private double linearVelX = 0.0;
     private double angVelZ = 0.0;
     private String CMD_VEL_TOPIC;
 
     private static final Log log = LogFactory.getLog(BaseControllerNode.class);
-    Thread moveBaseThread;
+    Thread baseControllerThread;
 
     @Override
     public GraphName getDefaultNodeName() {
@@ -57,27 +51,31 @@ public class BaseControllerNode extends AbstractNodeMain implements MessageListe
      * Creates a new base controller node that listens twists
      * in a given topic. Usually this will be cmd_vel.
      * @param vel_topic: The topic in which to listen for twists.
+     * @param baseDevice: The base device that wants to be used (Kobuki, Create or Husky for now)
      */
-    public BaseControllerNode(String vel_topic) {
+    public BaseControllerNode(BaseDevice baseDevice, String vel_topic) {
+        // TODO: Use ROS params to configure topic names
         CMD_VEL_TOPIC = vel_topic;
+        this.baseDevice = baseDevice;
     }
 
     /**
      * Should be called to finish the node initialization. The base driver, already initialize should
      * be provided to this method. This allows to defer the device creation to the moment Android gives
      * the application the required USB permissions.
-     * @param selectedBaseDevice: the base device that wants to be used (Kobuki or create for now)
      */
-    public void setBaseDevice(BaseDevice selectedBaseDevice) {
-        baseDevice = selectedBaseDevice;
-        nodeStartLatch.countDown();
-    }
 
     @Override
     public void onStart(ConnectedNode connectedNode) {
-        log.info("Base controller starting. Will wait for ACM device");
+        log.info("Base controller starting.");
 
-        moveBaseThread = new Thread() {
+        /**
+         * This thread decouples the receiving of messages via ROS Topics from the sending of messages
+         * to the base. Most bases require a continuous stream of messages to be sent. This code
+         * makes sure to keep sending messages to the base, repeating the previously received message
+         * if necessary, to keep a continuous stream going.
+         */
+        baseControllerThread = new Thread() {
             @Override
             public void run() {
                 // thread to constantly send commands to the base
@@ -99,31 +97,26 @@ public class BaseControllerNode extends AbstractNodeMain implements MessageListe
             }
         };
 
-        // Wait here until the base driver is provided via setBaseDevice.
-        try {
-            nodeStartLatch.await();
-        } catch (InterruptedException e) {
-            log.info("Interrupted while waiting for ACM device");
-        }
+        // Initialize base.
+        baseDevice.initialize();
+        baseControllerThread.start();
 
         // Start base_controller subscriber
         Subscriber<Twist> vel_listener = connectedNode.newSubscriber(CMD_VEL_TOPIC, Twist._TYPE);
         vel_listener.addMessageListener(this);
-
-        // Initialize base.
-        baseDevice.initialize();
-        moveBaseThread.start();
 
         log.info("Base controller initialized.");
     }
 
     @Override
     public void onShutdown(Node node) {
+        // TODO: Make sure shutdown is working properly. i.e.: shutdown controller thread
         super.onShutdown(node);
     }
 
     @Override
     public void onShutdownComplete(Node node) {
+        // TODO: Verify shutdown is working properly
         super.onShutdownComplete(node);
     }
 
@@ -133,6 +126,12 @@ public class BaseControllerNode extends AbstractNodeMain implements MessageListe
         log.info("synchronized setting: (" + this.linearVelX + "," + this.angVelZ + ")");
     }
 
+    /**
+     * Callback from the subscriber to the CMD_VEL topic.
+     * This method is called each time a command velocity message is received
+     *
+     * @param twist The command velocity message received
+     */
     @Override
     public void onNewMessage(Twist twist) {
         log.info("Current Twist msg: " + twist);
