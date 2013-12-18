@@ -79,8 +79,11 @@ public class BaseOdomPublisher extends AbstractNodeMain {
         Transform t = baseToLaser.getTransform();
         Vector3 tr = t.getTranslation();
         Quaternion q = t.getRotation();
-        tr.setX(0.235);
-        tr.setY(0.135);
+        //TODO: Move laser_link tf publisher out of the Odometry Publisher.
+        tr.setX(0.235); // For the Husky
+        tr.setY(0.135); // For the Husky
+        //tr.setX(0);   // For the Kobuky
+        //tr.setY(0);   // For the Kobuky
         tr.setZ(0.0);
         q.setW(1.0);
         q.setX(0.0);
