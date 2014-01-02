@@ -23,4 +23,8 @@ apply plugin: 'android-library'
 
 android {
     compileSdkVersion 17
+    lintOptions {
+        // if true, stop the gradle build if errors are found
+        abortOnError false
+    }
 }
