@@ -3,6 +3,8 @@
       package="com.c77.move_base"
       android:versionCode="1"
       android:versionName="1.0">
-    <uses-sdk android:minSdkVersion="13"/>
+      <uses-sdk
+        android:minSdkVersion="15"
+        android:targetSdkVersion="18"/>
     <application/>
 </manifest>
