@@ -14,4 +14,4 @@
  * the License.
  */
 
-include 'base_controller'
+include 'base_controller_lib'
