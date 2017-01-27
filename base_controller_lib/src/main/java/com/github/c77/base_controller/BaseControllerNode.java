@@ -38,8 +38,10 @@ public class BaseControllerNode extends AbstractNodeMain implements MessageListe
     private double linearVelX = 0.0;
     private double angVelZ = 0.0;
     private String CMD_VEL_TOPIC;
+    private long lastUpdateTimeMs = 0;
 
     private static final Log log = LogFactory.getLog(BaseControllerNode.class);
+    private static final long MAX_TIME_BETWEEN_UPDATES_MS = 1000;
     Thread baseControllerThread;
 
     @Override
@@ -81,7 +83,13 @@ public class BaseControllerNode extends AbstractNodeMain implements MessageListe
                 // thread to constantly send commands to the base
                 try {
                     while(true) {
-                        baseDevice.move(linearVelX, angVelZ);
+                        if (System.currentTimeMillis() - lastUpdateTimeMs > MAX_TIME_BETWEEN_UPDATES_MS) {
+                            baseDevice.move(0, 0);
+                            log.info("No cmd vel received in " + MAX_TIME_BETWEEN_UPDATES_MS + " ms. Stopping.");
+                        } else {
+                            baseDevice.move(linearVelX, angVelZ);
+                        }
+
                         Thread.sleep(250);
                     }
                 } catch (Throwable t) {
@@ -92,6 +100,7 @@ public class BaseControllerNode extends AbstractNodeMain implements MessageListe
                         setTwistValues(0.0, 0.0);
                         baseDevice.move(0.0, 0.0);
                     } catch(Throwable t0) {
+
                     }
                 }
             }
@@ -123,6 +132,7 @@ public class BaseControllerNode extends AbstractNodeMain implements MessageListe
     private synchronized void setTwistValues(double linearVelX, double angVelZ) {
         this.linearVelX = linearVelX;
         this.angVelZ = angVelZ;
+        this.lastUpdateTimeMs = System.currentTimeMillis();
         log.info("synchronized setting: (" + this.linearVelX + "," + this.angVelZ + ")");
     }
 
