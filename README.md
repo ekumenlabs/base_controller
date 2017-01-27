@@ -45,9 +45,9 @@ import com.hoho.android.usbserial.driver.UsbSerialProber;
 Import the ROS nodes and the base drivers:
 
 ```java
-import com.github.c77.base_controller.BaseControllerNode;
-import com.github.c77.base_controller.BaseStatusPublisher;
-import com.github.c77.base_driver.kobuki.KobukiBaseDevice;
+import com.github.ekumenlabs.base_controller.BaseControllerNode;
+import com.github.ekumenlabs.base_controller.BaseStatusPublisher;
+import com.github.ekumenlabs.base_driver.kobuki.KobukiBaseDevice;
 ```
 
 You can instantiate the nodes when creating the Main ROS Activity:

@@ -14,9 +14,9 @@
  * the License.
  */
 
-package com.github.c77.base_controller;
+package com.github.ekumenlabs.base_controller;
 
-import com.github.c77.base_driver.BaseDevice;
+import com.github.ekumenlabs.base_driver.BaseDevice;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
