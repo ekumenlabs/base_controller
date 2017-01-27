@@ -5,6 +5,7 @@ import com.github.c77.base_driver.OdometryStatus;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.ros.concurrent.WallTimeRate;
 import org.ros.message.MessageFactory;
 import org.ros.message.Time;
 import org.ros.namespace.GraphName;
@@ -35,7 +36,7 @@ public class BaseOdomPublisher extends AbstractNodeMain {
     MessageFactory mMessageFactory = mNodeConfiguration.getTopicMessageFactory();
     private Publisher<Odometry> odometryPublisher;
     private Publisher<TFMessage> tfPublisher;
-    private TransformStamped odomToBaseLink;
+    private TransformStamped odomToBaseFootprint;
     private TransformStamped baseToLaser;
 
     private static final Log log = LogFactory.getLog(BaseOdomPublisher.class);
@@ -56,10 +57,12 @@ public class BaseOdomPublisher extends AbstractNodeMain {
             public void run() {
                 OdometryStatus odometryStatus;
                 try {
-                    while(true){
+                    WallTimeRate rate = new WallTimeRate(100);
+
+                    while(true) {
                         odometryStatus = baseDevice.getOdometryStatus();
                         BaseOdomPublisher.this.publish(odometryStatus);
-                        Thread.sleep(100, 0);
+                        rate.sleep();
                     }
                 } catch (Throwable t) {
                     log.error("Exception occurred during state publisher loop.", t);
@@ -69,12 +72,12 @@ public class BaseOdomPublisher extends AbstractNodeMain {
 
         odometryPublisher = connectedNode.newPublisher("/odom", "nav_msgs/Odometry");
         tfPublisher = connectedNode.newPublisher("/tf", TFMessage._TYPE);
-        odomToBaseLink = mMessageFactory.newFromType(TransformStamped._TYPE);
+        odomToBaseFootprint = mMessageFactory.newFromType(TransformStamped._TYPE);
         baseToLaser = mMessageFactory.newFromType(TransformStamped._TYPE);
 
         // Set laser transform.  (Static, never changes)
         Header h = baseToLaser.getHeader();
-        h.setFrameId("base_link");
+        h.setFrameId("base_footprint");
         baseToLaser.setChildFrameId("laser_link");
         Transform t = baseToLaser.getTransform();
         Vector3 tr = t.getTranslation();
@@ -91,7 +94,7 @@ public class BaseOdomPublisher extends AbstractNodeMain {
         q.setZ(0.0);
 
         // Set constant childFrame
-        odomToBaseLink.setChildFrameId("base_link");
+        odomToBaseFootprint.setChildFrameId("base_footprint");
 
         basePublisherThread.start();
     }
@@ -106,7 +109,7 @@ public class BaseOdomPublisher extends AbstractNodeMain {
         header.setStamp(Time.fromMillis(System.currentTimeMillis()));
 
         // Child frame id
-        odometryMessage.setChildFrameId("base_link");
+        odometryMessage.setChildFrameId("base_footprint");
 
         // Pointers to important data fields
         Point position = odometryMessage.getPose().getPose().getPosition();
@@ -127,8 +130,8 @@ public class BaseOdomPublisher extends AbstractNodeMain {
         odometryPublisher.publish(odometryMessage);
 
         // Set odom transform
-        odomToBaseLink.setHeader(header);
-        Transform t = odomToBaseLink.getTransform();
+        odomToBaseFootprint.setHeader(header);
+        Transform t = odomToBaseFootprint.getTransform();
         Vector3 tr = t.getTranslation();
         tr.setX(position.getX());
         tr.setY(position.getY());
@@ -141,7 +144,7 @@ public class BaseOdomPublisher extends AbstractNodeMain {
         // Publish transforms
         TFMessage tfm = tfPublisher.newMessage();
         List<TransformStamped> tfl = tfm.getTransforms();
-        tfl.add(odomToBaseLink);
+        tfl.add(odomToBaseFootprint);
         tfl.add(baseToLaser);
         tfPublisher.publish(tfm);
     }
