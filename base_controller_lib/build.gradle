@@ -14,17 +14,26 @@
  * the License.
  */
 
+// UsbSerialLibrary is not yet available on Maven, so the path to the artifact
+// has to be sourced to work properly with tools like AndroidStudio.
 dependencies {
-    compile 'org.ros.android_core:android_10:[0.2, 0.3)'
-    compile 'com.hoho.android.usbserial:UsbSerialLibrary:[0.1.1, 0.2)'
+    compile 'org.ros.rosjava_core:rosjava:[0.3.0]'
+    compile 'com.hoho.android.usbserial:UsbSerialLibrary:[0.1, 0.2)'
 }
 
-apply plugin: 'android-library'
+apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 17
+    compileSdkVersion 19
+    buildToolsVersion "21.1.2"
+    defaultConfig {
+        minSdkVersion 15
+        targetSdkVersion 19
+        versionCode 1
+        versionName "1.0"
+    }
+
     lintOptions {
-        // if true, stop the gradle build if errors are found
-        abortOnError false
+        abortOnError = false
     }
 }
