@@ -26,7 +26,6 @@ apply plugin: 'catkin'
 
 
 allprojects {
-    /* A github url provides a good standard unique name for your project */
     group 'com.ekumen.base_controller'
     version = project.catkin.pkg.version
 }
