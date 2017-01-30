@@ -1,4 +1,4 @@
-package com.github.ekumenlabs.base_driver.husky;
+package com.ekumen.base_driver.husky;
 
 import org.apache.commons.codec.binary.Hex;
 

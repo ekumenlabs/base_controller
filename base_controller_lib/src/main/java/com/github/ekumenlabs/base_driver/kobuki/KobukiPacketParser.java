@@ -14,10 +14,10 @@
  * the License.
  */
 
-package com.github.ekumenlabs.base_driver.kobuki;
+package com.ekumen.base_driver.kobuki;
 
-import com.github.ekumenlabs.base_driver.BaseStatus;
-import com.github.ekumenlabs.base_driver.InertialInformation;
+import com.ekumen.base_driver.BaseStatus;
+import com.ekumen.base_driver.InertialInformation;
 
 /**
  * Created by Lucas Chiesa on 10/10/13.

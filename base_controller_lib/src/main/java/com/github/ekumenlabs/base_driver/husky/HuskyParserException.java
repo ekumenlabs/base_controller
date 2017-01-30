@@ -1,4 +1,4 @@
-package com.github.ekumenlabs.base_driver.husky;
+package com.ekumen.base_driver.husky;
 
 /**
 * @author jcerruti@creativa77.com (Julian Cerruti)

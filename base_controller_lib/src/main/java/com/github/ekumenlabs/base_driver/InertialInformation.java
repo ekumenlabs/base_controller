@@ -14,7 +14,7 @@
  * the License.
  */
 
-package com.github.ekumenlabs.base_driver;
+package com.ekumen.base_driver;
 
 /**
  * Created by Lucas Chiesa on 10/10/13.

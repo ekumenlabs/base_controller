@@ -1,7 +1,7 @@
-package com.github.ekumenlabs.base_controller;
+package com.ekumen.base_controller;
 
-import com.github.ekumenlabs.base_driver.BaseDevice;
-import com.github.ekumenlabs.base_driver.OdometryStatus;
+import com.ekumen.base_driver.BaseDevice;
+import com.ekumen.base_driver.OdometryStatus;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

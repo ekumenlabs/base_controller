@@ -1,7 +1,7 @@
-package com.github.ekumenlabs.base_driver.kobuki;
+package com.ekumen.base_driver.kobuki;
 
-import com.github.ekumenlabs.base_driver.AbstractOdometryStatus;
-import com.github.ekumenlabs.base_driver.BaseStatus;
+import com.ekumen.base_driver.AbstractOdometryStatus;
+import com.ekumen.base_driver.BaseStatus;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

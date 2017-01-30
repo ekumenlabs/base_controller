@@ -1,4 +1,4 @@
-package com.github.ekumenlabs.base_driver;
+package com.ekumen.base_driver;
 
 /**
  * @author jcerruti@willowgarage.com (Julian Cerruti)
