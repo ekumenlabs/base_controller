@@ -1,6 +1,6 @@
-package com.github.c77.base_driver.husky;
+package com.ekumen.base_driver.husky;
 
-import com.github.c77.base_driver.AbstractOdometryStatus;
+import com.ekumen.base_driver.AbstractOdometryStatus;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

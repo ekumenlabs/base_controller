@@ -4,8 +4,7 @@
 	See license.txt for details.
 */
 
-package com.github.c77.base_driver.kobuki;
-import org.apache.commons.codec.binary.Hex;
+package com.ekumen.base_driver.kobuki;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
