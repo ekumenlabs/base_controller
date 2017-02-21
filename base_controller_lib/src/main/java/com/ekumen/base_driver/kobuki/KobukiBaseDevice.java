@@ -20,23 +20,24 @@ package com.ekumen.base_driver.kobuki;
  * Created by Sebastian Garcia Marra on 05/08/13.
  */
 
-import com.ekumen.base_driver.BaseDevice;
+import android.hardware.usb.UsbDeviceConnection;
+
+import com.ekumen.base_driver.AbstractBaseDevice;
 import com.ekumen.base_driver.BaseStatus;
 import com.ekumen.base_driver.OdometryStatus;
-import com.hoho.android.usbserial.driver.UsbSerialDriver;
+import com.hoho.android.usbserial.driver.UsbSerialPort;
 import com.hoho.android.usbserial.util.SerialInputOutputManager;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.ros.exception.RosRuntimeException;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.ros.exception.RosRuntimeException;
-
-public class KobukiBaseDevice implements BaseDevice {
+public class KobukiBaseDevice extends AbstractBaseDevice {
 
     private final byte SetBaudrate115200 = (byte) 6;
     // Kobuki low level commands
@@ -51,8 +52,6 @@ public class KobukiBaseDevice implements BaseDevice {
     private KobukiOdometryStatus odometryStatus = new KobukiOdometryStatus();
 
     private static final Log log = LogFactory.getLog(KobukiBaseDevice.class);
-
-    private final UsbSerialDriver serialDriver;
 
     private class BaseSpeedValues {
         private final int linearSpeed;
@@ -72,23 +71,8 @@ public class KobukiBaseDevice implements BaseDevice {
         }
     }
 
-    public KobukiBaseDevice(UsbSerialDriver driver) throws Exception {
-        if(driver == null) {
-            throw new Exception("null USB driver provided");
-        }
-        serialDriver = driver;
-        try {
-            serialDriver.open();
-            serialDriver.setParameters(115200, UsbSerialDriver.DATABITS_8,
-                    UsbSerialDriver.STOPBITS_1, UsbSerialDriver.PARITY_NONE);
-        } catch (IOException e) {
-            log.info("Error setting up device: " + e.getMessage(), e);
-            try {
-                serialDriver.close();
-            } catch (IOException e1) {
-                e1.printStackTrace();
-            }
-        }
+    public KobukiBaseDevice(UsbSerialPort usbSerialPort, UsbDeviceConnection usbDeviceConnection) throws Exception {
+        super(usbSerialPort, usbDeviceConnection);
 
         final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
@@ -106,8 +90,14 @@ public class KobukiBaseDevice implements BaseDevice {
                 }
             };
 
-        serialInputOutputManager = new SerialInputOutputManager(serialDriver, listener);
+        serialInputOutputManager = new SerialInputOutputManager(port, listener);
         executorService.submit(serialInputOutputManager);
+    }
+
+    @Override
+    protected void setConnectionParameters(UsbSerialPort port) throws Exception {
+        port.setParameters(115200, UsbSerialPort.DATABITS_8,
+                UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
     }
 
     public BaseStatus getBaseStatus() {
@@ -220,7 +210,7 @@ public class KobukiBaseDevice implements BaseDevice {
     private void write(byte[] command) {
         try {
             log.info("Writing a command to USB Device.");
-            serialDriver.write(command, 1000);
+            port.write(command, 1000);
         } catch (IOException e) {
             throw new RosRuntimeException(e);
         }
