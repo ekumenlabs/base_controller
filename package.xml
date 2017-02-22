@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>base_controller</name>
-  <version>0.1.4</version>
+  <version>0.2.0</version>
   <description>A base controller for doing Android base robots using ROS.</description>
 
   <maintainer email="lucas@creativa77.com.ar">Lucas Chiesa</maintainer>
