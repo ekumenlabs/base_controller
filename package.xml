@@ -16,8 +16,8 @@
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>android_core</build_depend>
   <build_depend>rosjava_build_tools</build_depend>
-  <build_depend>usb_serial_for_android</build_depend>
-  <run_depend>usb_serial_for_android</run_depend>
+  <build_depend>usb_serial_for_android_catkin</build_depend>
+  <run_depend>usb_serial_for_android_catkin</run_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

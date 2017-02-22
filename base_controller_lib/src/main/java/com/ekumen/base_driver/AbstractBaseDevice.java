@@ -23,6 +23,11 @@ import org.apache.commons.logging.LogFactory;
 
 import java.io.IOException;
 
+/**
+ * Encapsulates common functionality for all base devices, providing a common method to
+ * establish a connection using a given {@link UsbSerialPort} and a {@link UsbDeviceConnection}.
+ * Connection parameters have to be defined in each subclass, as they are device-dependent.
+ */
 public abstract class AbstractBaseDevice implements BaseDevice {
 
     protected UsbSerialPort port;

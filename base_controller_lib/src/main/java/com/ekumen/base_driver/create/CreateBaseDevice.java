@@ -140,5 +140,4 @@ public class CreateBaseDevice extends AbstractBaseDevice {
         port.setParameters(9600, UsbSerialPort.DATABITS_8,
                 UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
     }
-
 }
