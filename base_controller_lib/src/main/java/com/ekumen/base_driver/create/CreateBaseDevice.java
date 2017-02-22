@@ -20,21 +20,22 @@ package com.ekumen.base_driver.create;
  * Created by Sebastian Garcia Marra on 22/07/13.
  */
 
-import com.ekumen.base_driver.BaseDevice;
+import android.hardware.usb.UsbDeviceConnection;
+
+import com.ekumen.base_driver.AbstractBaseDevice;
 import com.ekumen.base_driver.BaseStatus;
 import com.ekumen.base_driver.OdometryStatus;
-import com.hoho.android.usbserial.driver.UsbSerialDriver;
+import com.hoho.android.usbserial.driver.UsbSerialPort;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.io.IOException;
 
-public class CreateBaseDevice implements BaseDevice {
+public class CreateBaseDevice extends AbstractBaseDevice {
 
     private Double createBaseDiameter = 0.33; //In meters
     private Double createWheelRadius = 0.04;  //In meters
-    private static UsbSerialDriver device = null;
 
     private final byte SetBaudrate57600 = (byte) 5;
     // iRobot Create low level commands.
@@ -62,21 +63,8 @@ public class CreateBaseDevice implements BaseDevice {
 
     private static final Log log = LogFactory.getLog(CreateBaseDevice.class);
 
-    public CreateBaseDevice(UsbSerialDriver driver) {
-        device = driver;
-        try {
-            device.open();
-            device.setParameters(9600, UsbSerialDriver.DATABITS_8, UsbSerialDriver.STOPBITS_1, UsbSerialDriver.PARITY_NONE);
-        } catch (IOException e) {
-            log.info("Error setting up device: " + e.getMessage(), e);
-            e.printStackTrace();
-            try {
-                device.close();
-            } catch (IOException e1) {
-                e1.printStackTrace();
-            }
-            device = null;
-        }
+    public CreateBaseDevice(UsbSerialPort usbSerialPort, UsbDeviceConnection usbDeviceConnection) throws Exception {
+        super(usbSerialPort, usbDeviceConnection);
     }
 
     public void initialize() {
@@ -128,7 +116,7 @@ public class CreateBaseDevice implements BaseDevice {
     private void write(byte[] command) {
         log.info("Writing a command to Device.");
         try {
-            device.write(command, 1000);
+            port.write(command, 1000);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -147,4 +135,9 @@ public class CreateBaseDevice implements BaseDevice {
         return null;
     }
 
+    @Override
+    protected void setConnectionParameters(UsbSerialPort port) throws Exception {
+        port.setParameters(9600, UsbSerialPort.DATABITS_8,
+                UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
+    }
 }

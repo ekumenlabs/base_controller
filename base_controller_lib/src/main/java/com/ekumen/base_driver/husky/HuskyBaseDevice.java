@@ -20,21 +20,22 @@ package com.ekumen.base_driver.husky;
  * Created by Sebastian Garcia Marra on 05/08/13.
  */
 
-import com.ekumen.base_driver.BaseDevice;
+import android.hardware.usb.UsbDeviceConnection;
+
+import com.ekumen.base_driver.AbstractBaseDevice;
 import com.ekumen.base_driver.BaseStatus;
 import com.ekumen.base_driver.OdometryStatus;
-import com.hoho.android.usbserial.driver.UsbSerialDriver;
+import com.hoho.android.usbserial.driver.UsbSerialPort;
 import com.hoho.android.usbserial.util.SerialInputOutputManager;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class HuskyBaseDevice implements BaseDevice {
+public class HuskyBaseDevice extends AbstractBaseDevice {
     private final long initialTime;
 
     HuskyPacketReader packetReader = new HuskyPacketReader();
@@ -51,9 +52,6 @@ public class HuskyBaseDevice implements BaseDevice {
 
     private static final Log log = LogFactory.getLog(HuskyBaseDevice.class);
 
-    // Underlying USB-serial driver
-    private final UsbSerialDriver serialDriver;
-
     public BaseStatus getBaseStatus() {
         BaseStatus baseStatus;
         baseStatus = new BaseStatus();
@@ -66,25 +64,11 @@ public class HuskyBaseDevice implements BaseDevice {
     }
 
 
-    public HuskyBaseDevice(UsbSerialDriver driver) {
+    public HuskyBaseDevice(UsbSerialPort usbSerialPort, UsbDeviceConnection usbDeviceConnection) throws Exception {
+        super(usbSerialPort, usbDeviceConnection);
+
         // Initialize timestamp for messages to be written to the Husky base
         initialTime = System.currentTimeMillis();
-
-        // Open and initialize the underlying USB-serial driver
-        serialDriver = driver;
-        try {
-            serialDriver.open();
-            serialDriver.setParameters(115200, UsbSerialDriver.DATABITS_8,
-                    UsbSerialDriver.STOPBITS_1, UsbSerialDriver.PARITY_NONE);
-            log.info("Serial device opened correctly");
-        } catch (IOException e) {
-            log.error("Error setting up device: " + e.getMessage(), e);
-            try {
-                serialDriver.close();
-            } catch (Throwable t) {
-            }
-            throw new RuntimeException("Couldn't open USB device driver", e);
-        }
 
         // Listen for USB-serial input events and call updateReceivedData whenever new data
         // is received
@@ -101,7 +85,7 @@ public class HuskyBaseDevice implements BaseDevice {
                     HuskyBaseDevice.this.updateReceivedData(data);
                 }
             };
-        serialInputOutputManager = new SerialInputOutputManager(serialDriver, listener);
+        serialInputOutputManager = new SerialInputOutputManager(port, listener);
         executorService.submit(serialInputOutputManager);
     }
 
@@ -238,9 +222,15 @@ public class HuskyBaseDevice implements BaseDevice {
      */
     private void write(byte[] command) {
         try {
-            serialDriver.write(command, 1000);
+            port.write(command, 1000);
         } catch(Throwable t) {
             log.error("Exception writing command: " + HuskyBaseUtils.byteArrayToString(command), t);
         }
+    }
+
+    @Override
+    protected void setConnectionParameters(UsbSerialPort port) throws Exception {
+        port.setParameters(115200, UsbSerialPort.DATABITS_8,
+                UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
     }
 }
