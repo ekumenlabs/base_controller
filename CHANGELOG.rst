@@ -2,8 +2,8 @@
 Changelog for package base_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.2.0 (2017-02-22)
+------------------
 * Using the latest version of UsbSerialLibrary from public repository.
 * Refactored com.github.c77 package name to com.ekumen.
 * Corrected package name in manifest.
