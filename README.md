@@ -9,7 +9,7 @@ Building
 --------
 
 To build this package you can just use `gradlew` from the command line, or
-you can put the package inside a catkin workspace and built it with
+you can put the package inside a catkin workspace and build it with
 `catkin_make`.
 
 Requirements
@@ -31,14 +31,26 @@ Usage
 -----
 
 These code fragments show how to use this package to create a
-Kobuki driver in an ROS Activity. For the Create base you should simple
+Kobuki driver in a ROS Activity. For the Create base you should simply
 replace Kobuki with Create.
 
 
-Import the [USB library](https://github.com/mik3y/usb-serial-for-android):
+First, import the [USB library](https://github.com/mik3y/usb-serial-for-android). You can use the available Maven Artifact if you don't want to build it from source. 
+To do so, add the following dependency in your module's `build.gradle`:
+
+```
+dependencies {
+  ...
+  compile 'com.hoho.android:usb-serial-for-android:[0.2, 0.3)'
+  ...
+}
+```
+
+Then, import the new objects in your Java source file:
 
 ```java
 import com.hoho.android.usbserial.driver.UsbSerialDriver;
+import com.hoho.android.usbserial.driver.UsbSerialPort;
 import com.hoho.android.usbserial.driver.UsbSerialProber;
 ```
 
@@ -50,28 +62,48 @@ import com.ekumen.base_controller.BaseStatusPublisher;
 import com.ekumen.base_driver.kobuki.KobukiBaseDevice;
 ```
 
-You can instantiate the nodes when creating the Main ROS Activity:
-
-```java
-public MainActivity() {
-    super("MainActivity", "MainActivity");
-    baseControllerNode = new BaseControllerNode("/cmd_vel");
-    baseStatusPublisher = new BaseStatusPublisher();
-}
-```
-
-In the init method of the Node, we use the USB library to find the device and create the base driver.
-After creating the base driver, we can set the device to the two nodes.
+In the `init` method of your `RosActivity`, use the USB library to find a driver, get a port and a connection.
+Then, use them to create the Base Devices required to instantiate the nodes:
 
 ```java
 // Get UsbManager from Android.
 UsbManager manager = (UsbManager) getSystemService(Context.USB_SERVICE);
-// Find the first available driver.
-UsbSerialDriver driver = UsbSerialProber.findFirstDevice(manager);
-// Create the low level base device.
-KobukiBaseDevice kobukiBaseDevice = new KobukiBaseDevice(driver);
-baseControllerNode.setBaseDevice(kobukiBaseDevice);
-baseStatusPublisher.setBaseDevice(kobukiBaseDevice);
+
+// Get a driver list
+List<UsbSerialDriver> driverList = UsbSerialProber.getDefaultProber().findAllDrivers(usbManager);
+// Continue only if we have a single driver in the list
+if (driverList.isEmpty()) {
+    throw new Exception("No drivers found for the supplied USB device: " + device);
+}
+
+// Use first available driver to get Port and Connection
+UsbSerialDriver driver = driverList.get(0);
+UsbDeviceConnection connection = manager.openDevice(driver.getDevice());
+UsbSerialPort port = driver.getPorts().get(0);
+
+// Create the low level base device using the created Port and Connection
+BaseDevice kobukiBaseDevice = new KobukiBaseDevice(port, connection);
+
+// Create the nodes using the Base Device
+BaseControllerNode baseControllerNode = new BaseControllerNode(kobukiBaseDevice, "/cmd_vel");
+BaseStatusPublisher baseStatusPublisher = new BaseStatusPublisher(kobukiBaseDevice);
 ```
 
-After this point use the nodeMainExecutor to launch the nodes.
+After this point, use the `nodeMainExecutor` to launch the nodes in the standard Rosjava way.
+
+Maven Artifact
+--------------
+You can use base_controller in your project using the available Maven Artifact instead of building it from source. 
+To do so, add the following dependency to your modules's `build.gradle`:
+
+```
+dependencies {
+  ...
+  compile 'com.ekumen.base_controller:base_controller_lib:[0.2, 0.3)'
+  ...
+}
+```
+
+Note: to do this, the [rosjava_mvn_repo](https://github.com/rosjava/rosjava_mvn_repo) should be available in your listed repositories.
+The easiest way to ensure it is using the kinetic standard top-level `build.gradle` in your project (you can use base_controller's [build.gradle](https://github.com/ekumenlabs/base_controller/blob/kinetic/build.gradle) as an example).
+
